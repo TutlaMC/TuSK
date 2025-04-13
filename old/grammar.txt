@@ -1,0 +1,27 @@
+start: statement+
+
+statement: assignment
+         | expression
+         | PRINT expression
+
+assignment: NAME "=" SIGNED_NUMBER
+
+expression: term
+          | expression "+" term   -> add
+          | expression "-" term   -> subtract
+
+term: factor
+    | term "*" factor             -> multiply
+    | term "/" factor             -> divide
+
+factor: SIGNED_NUMBER             -> number
+      | NAME                      -> variable
+      | STRING                    -> string
+      | "(" expression ")"
+
+PRINT: "print"
+NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
+STRING: /"[^"]*"/
+%import common.SIGNED_NUMBER
+%import common.WS
+%ignore WS
