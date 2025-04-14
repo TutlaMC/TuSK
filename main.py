@@ -204,12 +204,12 @@ class Interpreter:
     def compile(self):
         self.tokens = self.classify_tokens()
 
-        self.pos = 0
-        self.current_token = self.tokens[self.pos] # first word
+        self.pos = 0 # reset the reader cuz we used it in the lexer
+        self.current_token = self.tokens[self.pos] 
 
         print("================= DEBUG ==================")
         print(self.tokens)
-        print("================= OUTPUT ==================")
+        print("================= OUTPUT =================")
         while self.pos <= len(self.tokens)-1:
             
             print(self.current_token)
@@ -219,7 +219,7 @@ class Interpreter:
                     if self.current_token.value == "print":
                         print(self.expect_token("STRING|IDENTIFIER|SIGNED_NUMBER").value)
             else:
-                raise Exception(f"Expected token KEYWORD or VALID_IDENTIFIER, got {self.current_token.type}")
+                raise Exception(f"Expected token KEYWORD or VALID_IDENTIFIER, got {self.current_token.type}\n@tusk {self.current_token.value}")
             
 
 
@@ -318,35 +318,103 @@ class Interpreter:
 
     
     def classify_tokens(self):
+
+        print("================= LEXER ==================")
         stuff = self.text.split()
 
-        for token in stuff:
-            # oh yea this is the lexer btws
-            # we'll start our first reader here and then reset it later, we'll first tokenize it to make it easier.
+        text = self.text
+        reader_pos = 0
+        token = ""
+
+        in_string = False
+        in_comment = False
+        start_quote_type = None       
+
+        for j in text: 
+            
+
+            if in_string:
+                if j == start_quote_type:
+                    in_string = False
+                    self.tokens.append(Token("STRING", token, self))
+                    token = ""
+                else:
+                    token += j
+            elif in_comment:
+                if j == "\n":
+                    in_comment = False
+                    token = ""
+                else: pass
+            else:
+                if j in "(){}[]":
+                    token_type = {
+                        "(": "LEFT_PAR",
+                        ")": "RIGHT_PAR",
+                        "{": "LEFT_CURLY",
+                        "}": "RIGHT_CURLY",
+                        "[": "LEFT_SQUARE",
+                        "]": "RIGHT_SQUARE"
+                    }[j]
+                    self.tokens.append(Token(token_type, token, self))
+                    token = ""
+                elif j == "#":
+                    in_comment = True
+                    token = ""
+                elif j in ["'", '"']:
+                    in_string = True
+                    start_quote_type = j
+                    token = ""
+                elif j in " \t\n":
+                    if token != "":
+                        if token.isnumeric():
+                            self.tokens.append(Token("SIGNED_NUMBER", token, self))
+                            token = ""
+                        elif token in ["<", ">", "<=", ">=", "==", "!="]:
+                            self.tokens.append(Token("COMPARISION", token, self))
+                            token = ""
+                        elif token in ["set", "to", "print", "if", "then", "elseif", "else", "end"]:
+                            self.tokens.append(Token("KEYWORD", token, self))
+                        elif token in ["+", "-", "*", "/","^", "%"]:
+                            self.tokens.append(Token("OPERATOR", token, self))
+                        else:
+                            self.tokens.append(Token("IDENTIFIER", token, self))
+                            token = ""
+                    # self.tokens.append(Token("WHITESPACE", j, self)) Skipping whitespaces for now
+                else:
+                    token += j
+
+
+                    
+
+
+            """
             if token.startswith("("):
                 token = token[1:]
                 self.tokens.append(Token("LEFT_PAR", "(", self))
-            if token.endswith(")"):
+            elif token.endswith(")"):
                 token = token[:-1]
                 self.tokens.append(Token("RIGHT_PAR", ")", self))
-            if token.startswith('"') | token.startswith("'"): # Strings, multiline
+            elif token.startswith('"') | token.startswith("'"): # Strings
                 start_quote_type = token[0]
                 partial_string = ""
-                
-                for i in stuff[stuff.index(token):]:
-                    
-                    if i.endswith(start_quote_type):
-                        partial_string += " " + i
-                        if token==i:partial_string = partial_string[1:] # fixes extra space
+
+                reader = iter(self.text[self.text.index(token):])
+                current_char = next(reader, None)
+                formed_token=""
+                while current_char != None:
+                    partial_string += current_char
+                    current_char = next(reader, None)
+                    if current_char == start_quote_type:
                         break
-                    else:
-                        partial_string += " " + i
-                    
-                partial_string = partial_string[1:-1] # remove quotes
-                
-                
-                
-                
+                    elif current_char == None:
+                        raise Exception("Unclosed string")
+                partial_string = partial_string[1:]
+
+                e = (start_quote_type+partial_string+start_quote_type)
+                for i in e.split():
+                    stuff.pop(stuff.index(i))
+
+
                 self.tokens.append(Token("STRING", partial_string, self))
             elif token.isnumeric():
                 self.tokens.append(Token("SIGNED_NUMBER", token, self))
@@ -359,12 +427,16 @@ class Interpreter:
             else:
                 self.tokens.append(Token("IDENTIFIER", token, self))
 
+            """
+
             '''
             elif token in " \t\n":
                 self.tokens.append(Token("WHITESPACE", token))
             '''
 
+        
         return self.tokens
+        
             
             
 
