@@ -2,7 +2,8 @@ import re
 import math
 
 # TODO:
-# FIX: Expressions breaking after first parenthesis: 7 + ( 1 + 2 ) works but ( 1 + 2 ) + 7 doesnt
+# If Statements
+# Asyncio
 
 global rules
 rules = {}
@@ -56,8 +57,12 @@ class FactorNode(Node):
             self.value = float(self.value.value)
         elif self.value.type == "STRING":
             self.value = str(self.value.value)
+        elif self.value.type == "BOOL":
+            self.value == bool(self.value.value)
         elif self.value.type == "IDENTIFIER":
-            self.value = self.value.interpreter.vars[self.value.value]
+            if self.value.value in self.value.interpreter.data["vars"]:
+                self.value = self.value.interpreter.data["vars"][self.value.value]
+            else: raise Exception(f"Undefined variable {self.value.value}")
         elif self.value.type == "LEFT_PAR":
             self.value = ExpressionNode(self.interpreter.next_token()).value
             self.interpreter.next_token()
@@ -97,9 +102,8 @@ class ExpressionNode(Node):
         self.interpreter = token.interpreter
         self.auto_eval = True
 
-
         tkn1 = TermNode(token)
-        if token.interpreter.get_next_token().type in ["OPERATOR", "COMPARISION"]:
+        if token.interpreter.get_next_token().type in ["OPERATOR", "COMPARISION","STRUCTURE"]:
             operator = self.interpreter.next_token()
             tkn2 = TermNode(self.interpreter.next_token())
             if operator.type == "OPERATOR":
@@ -124,8 +128,127 @@ class ExpressionNode(Node):
         else:
             self.value = tkn1.value
             self.type="1en"
+
+class ConditionNode(Node):
+    def __init__(self,token:Token):
+        self.interpreter = token.interpreter
+        self.auto_eval = True
+
+        self.opposite = False
+
+        if token.type == "LOGIC" and token.value=="not":
+            self.opposite = True
+            token = self.interpreter.next_token()
         
+        tkn1 = ExpressionNode(token)
+        if token.interpreter.get_next_token().type == "LOGIC":
+            operator = self.interpreter.next_token()
+            tkn2 = ExpressionNode(self.interpreter.next_token())
+            if operator.value == "and":
+                if tkn1.value == True and tkn2.value == True: self.value = True
+                else: self.value = False  
+            elif operator.value == "or":
+                if tkn1.value == True or tkn2.value == True: self.value = True
+                else: self.value = False  
+           
+            self.type="3en"
+        else:
+            self.value = tkn1.value
+            self.type="1en"
+
+        if self.opposite: 
+            if self.value == True: self.value = False
+            else: self.value = True
         
+
+class IfNode(Node):
+    def  __init__(self, token:Token):
+        self.interpreter = token.interpreter
+
+        condition = ConditionNode(token).value
+        self.interpreter.expect_token("KEYWORD:then")
+        self.statement = {
+            "main":{"condition":condition,
+                 "code": None},
+            "else":{
+                "code":None
+            }
+
+        }
+        self.end_found = False
+        self.elseif_count = 0
+
+
+        self.if_interpreter = Interpreter()
+        self.if_loop("main")
+
+        self.statement_complete = False
+
+        if condition:
+            self.if_interpreter.setup(tokens=self.statement["main"]["code"], data=self.interpreter.data).compile()
+            self.statement_complete=True
+        else:
+            for name in self.statement:
+                if self.statement_complete: break
+                if type(name) == int:
+                    if self.statement[name]["condition"]:
+                        self.if_interpreter.setup(tokens=self.statement[name]["code"], data=self.interpreter.data).compile()
+                        self.statement_complete = True
+        if self.statement_complete != True:
+            if self.statement["else"]["code"] != None:
+                self.if_interpreter.setup(tokens=self.statement["else"]["code"], data=self.interpreter.data).compile()
+                self.statement_complete = True
+
+
+
+    def if_loop(self, append_to_name):
+        token_blocks = []
+        interal_stucture_count = 0
+
+        while self.end_found != True:
+            nxt_tkn = self.interpreter.get_next_token()
+                                
+            if nxt_tkn.type == "STRUCTURE":
+                interal_stucture_count +=1
+                tkn_to_append = self.interpreter.next_token()
+                tkn_to_append.interpreter=self.if_interpreter
+                token_blocks.append(tkn_to_append)
+            elif nxt_tkn.type == "KEYWORD" and nxt_tkn.value == "end":
+                if interal_stucture_count == 0: 
+                    self.interpreter.next_token()
+                    self.end_found = True
+                else: 
+                    tkn_to_append = self.interpreter.next_token()
+                    tkn_to_append.interpreter=self.if_interpreter
+                    token_blocks.append(tkn_to_append)
+                    interal_stucture_count-=1
+            elif nxt_tkn.type == "KEYWORD" and nxt_tkn.value == "elseif":
+                if interal_stucture_count == 0: # ight then continue with elseif, otherwise the block might be continuing
+                    self.interpreter.next_token()
+                    condition = ExpressionNode(self.interpreter.next_token()).value
+                    self.interpreter.expect_token("KEYWORD:then")
+
+                    self.elseif_count +=1
+                    self.statement[self.elseif_count]={"condition":condition,
+                    "code": None}
+                    self.if_loop(self.elseif_count)
+
+                else:
+                    tkn_to_append = self.interpreter.next_token()
+                    tkn_to_append.interpreter=self.if_interpreter
+                    token_blocks.append(tkn_to_append)
+            elif nxt_tkn.type == "KEYWORD" and nxt_tkn.value == "else":
+                self.interpreter.next_token()
+                self.if_loop("else")
+            else:
+                tkn_to_append = self.interpreter.next_token()
+                tkn_to_append.interpreter=self.if_interpreter
+                token_blocks.append(tkn_to_append)
+        token_blocks.append(Token("ENDSCRIPT","",self.interpreter))
+        
+        self.statement[append_to_name]["code"] = token_blocks
+        
+
         
 
         
@@ -138,24 +261,39 @@ class ExpressionNode(Node):
 
 
 class Interpreter:
-    def __init__(self,text):
-        self.text = text
+    def __init__(self):      
+        pass
         
-        self.tokens = Lexer(code, self).classify_tokens()
+        
+
+    def setup(self, data=None, tokens=None, text=None):
+        if data==None:
+            self.data = {
+                "vars":{
+
+                },
+                "funcs":{
+
+                }
+            }
+        else:
+            self.data = data
+        if text!=None:self.text=text
+
+        if tokens==None:
+            self.tokens = Lexer(text, self).classify_tokens()
+        else:
+            self.tokens = tokens
         self.pos = 0
         self.current_token = self.tokens[self.pos]
-        
-        self.vars = {
-            "test_Var": 10,
-        }
+
+        return self
+
 
         
 
     def compile(self):
 
-        print("================= DEBUG ==================")
-        print(self.tokens)
-        print("================= OUTPUT =================")
         while self.pos <= len(self.tokens)-1:
             
 
@@ -164,7 +302,7 @@ class Interpreter:
             elif self.current_token.type == "NEWLINE":
                 self.next_token()
                 continue
-            if self.current_token.type in ["KEYWORD", "IDENTIFIER"]:
+            if self.current_token.type in ["KEYWORD", "IDENTIFIER","STRUCTURE"]:
                 if self.current_token.type == "KEYWORD":
                     if self.current_token.value == "print":
                         print(ExpressionNode(self.next_token()).value)
@@ -172,24 +310,11 @@ class Interpreter:
                         name = self.expect_token("IDENTIFIER")
                         self.expect_token("KEYWORD:to")
                         value = ExpressionNode(self.next_token())
-                        self.vars[name.value] = value.value
-                    elif self.current_token.value == "if":
-                        condition = ExpressionNode(self.next_token())
-                        self.expect_token("KEYWORD:then")
-                        
-                        """
-                        token_blocks = []
-                        c_token_block = []
-                        current_if_token = self.next_token()
-                        while current_if_token.type != "KEYWORD" and current_if_token.value != "end":
-                        """
-                        if condition.value == True:
-                            c_token_block = []
-                            
-                            # here we'll have a loop that will loop through all the tokens until it finds an end, it will also make sure that if there are nested if statements then itll check based on indents
-                            for if_tkn in self.tokens[self.pos:]:
-                                pass
-                                c_token_block.append(if_tkn)
+                        self.data["vars"][name.value] = value.value
+                elif self.current_token.type == "STRUCTURE":
+                    if self.current_token.value == "if":
+                        IfNode(self.next_token())
+                else: raise Exception(f"Unexpected Token: {self.current_token}")
 
                             
 
@@ -212,8 +337,8 @@ class Interpreter:
 
     def get_var(self, var_name):
         if isinstance(var_name, Token): var_name = var_name.value
-        if var_name in self.vars:
-            return self.vars[var_name]
+        if var_name in self.data["vars"]:
+            return self.data["vars"][var_name]
         else:
             raise Exception(f"IDENTIFIER {var_name} is undefined")
     
@@ -279,8 +404,6 @@ class Lexer:
 
     
     def classify_tokens(self):
-
-        print("================= LEXER ==================")
         stuff = self.text.split()
 
         text = self.text
@@ -327,15 +450,27 @@ class Lexer:
                     token = ""
                 elif j in " \t\n" or reader_pos == len(text)-1:
                     if reader_pos == len(text)-1: token += j
+                    if j in "\n":
+                        self.tokens.append(Token("NEWLINE", token, self.interpreter))
+                        token = ""
                     if token != "":
                         if token.isnumeric():
                             self.tokens.append(Token("SIGNED_NUMBER", token, self.interpreter))
                             token = ""
+                        elif token in ["true","false"]:
+                            self.tokens.append(Token("BOOL", token, self.interpreter))
+                            token = ""
+                        elif token in ["and","or","not"]:
+                            self.tokens.append(Token("LOGIC", token, self.interpreter))
+                            token = ""
                         elif token in ["<", ">", "<=", ">=", "==", "!="]:
                             self.tokens.append(Token("COMPARISION", token, self.interpreter))
                             token = ""
-                        elif token in ["set", "to", "print", "if", "then", "elseif", "else", "end"]:
+                        elif token in ["set", "to", "print", "then", "elseif", "else", "end"]:
                             self.tokens.append(Token("KEYWORD", token, self.interpreter))
+                            token=""
+                        elif token in ["if","while","for","create"]:
+                            self.tokens.append(Token("STRUCTURE", token, self.interpreter))
                             token=""
                         elif token in ["+", "-", "*", "/","**", "%"]:
                             self.tokens.append(Token("OPERATOR", token, self.interpreter))
@@ -343,16 +478,16 @@ class Lexer:
                         else:
                             self.tokens.append(Token("IDENTIFIER", token, self.interpreter))
                             token = ""
+                        
+                        
                     
 
+                    
+                    
+                    """
                     if j in "   ":
                         self.tokens.append(Token("TAB", token, self.interpreter))
-                        token = ""
-                    elif j in "\n":
-                        self.tokens.append(Token("NEWLINE", token, self.interpreter))
-                        token = ""
-                    """
-                   
+                        token = ""                   
                     elif token == " ":
                         self.tokens.append(Token("WHITESPACE", token, self.interpreter))
                         token = ""
@@ -372,6 +507,7 @@ class Lexer:
         self.tokens.append(Token("ENDSCRIPT", "", self.interpreter))
 
         ##  All this tab shi was done by chatgpt, it works so don't touch it
+        """
         i = 0
         while i < len(self.tokens):
             if self.tokens[i].type == "TAB":
@@ -400,6 +536,7 @@ class Lexer:
 
 
         # ight you can touch it now
+        """
 
         return self.tokens
         
@@ -409,5 +546,6 @@ class Lexer:
 with open("test.tusk", "r") as f:
     code = f.read()
 
-TuskTestInterpreter = Interpreter(code)
+TuskTestInterpreter = Interpreter()
+TuskTestInterpreter.setup(text=code)
 TuskTestInterpreter.compile()
