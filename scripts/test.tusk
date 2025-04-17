@@ -1,0 +1,5 @@
+function addnumbers num1 num2 that
+    return num1 + num2
+end
+
+print addnumbers 3 2

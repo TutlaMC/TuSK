@@ -3,11 +3,16 @@
 <expression>: <term> | ( <term> ((+|-)|(<|>|>=|<=|!=|==)) <term>)
 <condition>: <expression> | ("LOGIC:not")? <expression> LOGIC <expression>
 
-<if>: "STRUCTURE:if" <condition> "KEYWORD:then" (interpreter) (elif <condition> then ..code..)? (else ..code..) "KEYWORD:end"
-[print]: "KEYWORD:print" <expression>
-[set]: "KEYWORD:set" IDENTIFIER "KEYWORD:to" <expression>
+<function>: "STRUCTURE:function" ((IDENTIFIER)*)? "KEYWORD:that" <interpreter>
+<if>: "STRUCTURE:if" <condition> "KEYWORD:then" (<statement>)* (elif <condition> then (<statement>)*)? (else (<statement>)*) "KEYWORD:end"
+<print>: "KEYWORD:print" <expression>
+<set>: "KEYWORD:set" IDENTIFIER "KEYWORD:to" <expression>
 
 
-(interpreter): (<if>|[print]|[set])*
+<statement>: (<if>|<print>|<set>|<function>)*
 
-IDEA: Make a tab reader by including spaces as tokens 
+<interpreter>: (<statement>)* 
+    - data (vars, funcs) 
+    - tokens ([TOKENLIST])
+    - returned value, it will True by default
+

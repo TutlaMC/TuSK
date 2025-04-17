@@ -1,0 +1,23 @@
+set x to false
+print x
+while x is false do
+    print "hello"
+    set x to true
+end
+
+
+loop 10 times
+    print loop_item
+end
+
+set x to 1, 7, "Car"
+loop all items in x
+    print what type is loop_item
+end
+
+# Remove all the "#" at the beggining of this segment to run a forever loop
+# set x to 1
+# while true do
+#    set x to x + 1
+#    print x
+# end
