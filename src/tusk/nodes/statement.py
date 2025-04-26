@@ -14,7 +14,7 @@ class StatementNode(Node):
         self.auto_eval = True
 
 
-        if token.type in ["KEYWORD", "IDENTIFIER","STRUCTURE","EFFECT"]:
+        if token.type in ["KEYWORD", "IDENTIFIER","STRUCTURE","EFFECT","LEFT_CURLY","NUMBER","STRING"]:
             if token.type == "EFFECT":
                 if token.value == "print":
                     e = ExpressionNode(self.interpreter.next_token())
@@ -57,6 +57,10 @@ class StatementNode(Node):
                     LoopNode(self.interpreter.next_token())
             
             elif token.type == "IDENTIFIER":
+                ExpressionNode(self.interpreter.current_token)
+            elif token.type == "KEYWORD":
+                ExpressionNode(self.interpreter.current_token)
+            elif token.type in ["LEFT_CURLY","NUMBER","STRING"]:
                 ExpressionNode(self.interpreter.current_token)
             else: raise Exception(f"Unexpected Token: {token}")
         else: raise Exception(f"Expected KEYWORD | VALID_IDENTIFIER | STRUCTURE, got {self.interpreter.current_token.type} @tusk {self.interpreter.current_token.value}{token}")

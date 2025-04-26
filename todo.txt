@@ -1,10 +1,10 @@
 Next Update:
 - proper time stamps
 - post/get requests
-- play sound
-- command line command
+- exec and python
+- tson
+- add nothing
 - detailed errors
-- async/threads
 
 The update after that:
 - Discord Events

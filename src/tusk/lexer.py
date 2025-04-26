@@ -42,7 +42,7 @@ class Lexer:
         in_comment = False
         start_quote_type = None     
 
-        for i in "(){}[]+-/%*^,":
+        for i in "(){}[],;:+-/%*^,":
             text = text.replace(i,f" {i} ")
         text = text.replace("'s "," 's ")
         
@@ -68,7 +68,7 @@ class Lexer:
                 else: pass
             else:
                 
-                if j in "(){}[],":
+                if j in "(){}[],;:":
                     token_type = {
                         "(": "LEFT_PAR",
                         ")": "RIGHT_PAR",
@@ -77,6 +77,10 @@ class Lexer:
                         "[": "LEFT_SQUARE",
                         "]": "RIGHT_SQUARE",
                         ",": "COMMA",
+                        ";": "SEMICOLON",
+                        ":": "COLON",
+                        "{": "LEFT_CURLY",
+                        "}": "RIGHT_CURLY",
                     }[j]
                     self.tokens.append(Token(token_type, j, self.interpreter))
                     token = ""
@@ -103,6 +107,9 @@ class Lexer:
                             self.tokens.append(Token("BOOL", token, self.interpreter))
                             
                             token = ""
+                        elif token == "nothing":
+                            self.tokens.append(Token("NOTHING", token, self.interpreter))
+                            token = ""
                         elif token in ["and","or","not","contains","in","|","&"]:
                             self.tokens.append(Token("LOGIC", token, self.interpreter))
                             token = ""
@@ -115,7 +122,7 @@ class Lexer:
                         elif token in EFFECTS:
                             self.tokens.append(Token("EFFECT",token,self.interpreter))
                             token=""
-                        elif token in ["NUMBER","STRING","BOOL","BOOLEAN","LIST"]:
+                        elif token in ["NUMBER","STRING","BOOL","BOOLEAN","LIST","NOTHING"]:
                             self.tokens.append(Token("TYPE",token, self.interpreter))
                             token=""
                         elif token in ["if","while","create","function","loop"]:
@@ -163,38 +170,6 @@ class Lexer:
 
         self.tokens.append(Token("ENDSCRIPT", "", self.interpreter))
 
-        ##  All this tab shi was done by chatgpt, it works so don't touch it
-        """
-        i = 0
-        while i < len(self.tokens):
-            if self.tokens[i].type == "TAB":
-                start = i
-                count = 1
-                while i + count < len(self.tokens) and self.tokens[i + count].type == "TAB":
-                    count += 1
 
-                tab_token = self.tokens[i]
-                tab_groups = count // 4
-
-                del self.tokens[start:start + count]
-
-                for _ in range(tab_groups):
-                    self.tokens.insert(start, Token("TAB", tab_token.value, self.interpreter))
-
-                i = start + tab_groups
-            else:
-                i += 1
-        i = 0
-        while i < len(self.tokens) - 1:
-            if self.tokens[i].type == "TAB" and self.tokens[i + 1].type == "NEWLINE":
-                del self.tokens[i]
-            else:
-                i += 1
-
-
-        # ight you can touch it now
-        """
-
-
-        # print(self.tokens, '<- tokens')
+        #print(self.tokens, '<- tokens')
         return self.tokens

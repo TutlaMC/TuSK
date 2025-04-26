@@ -19,14 +19,20 @@ types_ = {
     "BOOL": bool,
     "BOOLEAN":bool,
     "LIST": list,
+    "TSON": dict,
+    "NOTHING": None,
 }
-def get_type_(token:Token):
+def get_type_(token):
+    
     from tusk.nodes.expressions import ExpressionNode
-    type_ = type(ExpressionNode(token).value)
+    if type(token) == Token: type_ = type(ExpressionNode(token).value)
+    else: type_ = type(token)
     if type_ == float or type_ == int : return "NUMBER"
     elif type_ == str: return "STRING"
     elif type_ == bool: return "BOOL"
     elif type_ == list: return "LIST"
+    elif type_ == dict: return "TSON"
+    elif type_ == None: return "NOTHING"
     return 
 
 def is_ordinal_number(token: Token):

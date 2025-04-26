@@ -25,6 +25,8 @@ class FactorNode(Node):
             else: self.value = False
         elif self.value.type == "TYPE":
             self.value = types_[self.value.value]
+        elif self.value.type == "NOTHING":
+            self.value = None
         elif self.value.type == "KEYWORD":
             if self.value.value == "what":
                 nxt_tkn = self.interpreter.next_token()
@@ -88,10 +90,6 @@ class FactorNode(Node):
                     else:raise Exception(f"Expected token KEYWORD:by | KEYWORD:from | KEYWORD:to got {nxt_tkn.type}")
 
                         
-                    
-
-
-
 
         elif self.value.type == "IDENTIFIER":
             if is_ordinal_number(self.value):
@@ -104,24 +102,39 @@ class FactorNode(Node):
             elif self.value.value in self.value.interpreter.data["vars"]:
                 self.value = NameNode(self.value).value
             elif self.value.value in self.value.interpreter.data["funcs"]: # calls function
-                func = self.value.interpreter.data["funcs"][self.value.value]
+                
+                func = self.value.interpreter.data["funcs"][self.value.value] # [[], interpreter]
                 func_name= self.value.value
                 func_interpreter = func[1]
                 parased_params = []
-                if len(func[0]) > 0: # length of params
+                if len(func[0]) > 0: # length of params, function doesnt need params
                     for param in func[0]: # looping params (func[0] is the param list)
-                        e = self.interpreter.get_next_token() # next token, the code afer this checks if it matches the required param
+                        e = self.interpreter.next_token() # next token, the code afer this checks if it matches the required param
+                        node = ExpressionNode(e)
                         if len(param.split(":")) > 1:
-                            if e.type==param.split(":")[0].upper():
-                                parased_params.append([param.split(":")[1],ExpressionNode(self.interpreter.next_token()).value])
+                            if get_type_(node.value) == param.split(":")[0].upper():
+                                parased_params.append([param.split(":")[1],node.value])
                             else:
-                                raise Exception(f"Recieved Token {e.type} instead of {param.split(':')[0]} in function {self.value.value} ") 
+                                raise Exception(f"Recieved type {get_type_(ExpressionNode(e))} instead of {param.split(':')[0]} in function {self.value.value} ") 
                         else:
-                            parased_params.append([param,ExpressionNode(self.interpreter.next_token()).value])
+                            parased_params.append([param,node.value])
                 for i in parased_params: func_interpreter.data["vars"][i[0]] = i[1]
                 self.value = func_interpreter.compile()
 
             else: raise Exception(f"Undefined variable {self.value.value}")
+        elif self.value.type == "LEFT_CURLY":
+            dct = {}
+            while self.interpreter.get_next_token().type != "RIGHT_CURLY":
+                e = self.interpreter.next_token()
+                if e.type in ["STRING"]:
+                    key = e.value
+                    self.interpreter.expect_token("COLON")
+                    value = ExpressionNode(self.interpreter.next_token(), rules=["noLists"]).value
+                    dct[key] = value
+                if self.interpreter.get_next_token().type == "COMMA":
+                    self.interpreter.next_token()
+            self.interpreter.expect_token("RIGHT_CURLY")
+            self.value = dct
         elif self.value.type == "LEFT_PAR":
             self.value = ExpressionNode(self.interpreter.next_token()).value
             self.interpreter.next_token()
@@ -134,7 +147,7 @@ class FactorNode(Node):
 
             while self.interpreter.get_next_token().type == "COMMA":
                 self.interpreter.next_token()
-                list_.append(ExpressionNode(self.interpreter.next_token(),rules=self.rules.append("noLists")).value)
+                list_.append(ExpressionNode(self.interpreter.next_token(),rules=["noLists"]).value)
             if len(list_) > 1: self.value = list_
          
 class TermNode(Node):
@@ -144,7 +157,7 @@ class TermNode(Node):
         self.rules = rules
         
         
-        tkn1 = FactorNode(factor)
+        tkn1 = FactorNode(factor,rules=self.rules)
         if self.interpreter.get_next_token().type == "OPERATOR":
             operator = self.interpreter.get_next_token()
             if operator.value in ["*","/","**","^"]:

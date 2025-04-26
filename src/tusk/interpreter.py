@@ -49,7 +49,6 @@ class Interpreter:
 
     def compile(self):
         while self.pos <= len(self.tokens)-1:
-            
 
             if self.current_token.type == "ENDSCRIPT":
                 break

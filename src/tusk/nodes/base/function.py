@@ -23,11 +23,11 @@ class FunctionNode(Node):
         """
         while self.interpreter.get_next_token().type in ["IDENTIFIER"]:
             param = self.interpreter.next_token().value
-            if len(param.split(":")) < 2:
-                formed_param = f"{param}"
+            if self.interpreter.get_next_token().type == "COLON":
+                formed_param = f"{self.interpreter.next_token().interpreter.next_token().value}:{param}"
             else:
-                formed_param = f"{param.split(':')[1].upper()}:{param.split(':')[0]}"
-
+                formed_param = param
+                
             self.params.append(formed_param)
         
         self.interpreter.data["funcs"][self.name] = [self.params]
