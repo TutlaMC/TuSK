@@ -1,1 +1,4 @@
-# to be added
+print what type is "ee", "blah", "ghyatt"
+print "ee", "blah", "ghyatt"
+
+print "ee", "blah", ("ghyatt", "wyatt") # nested lists

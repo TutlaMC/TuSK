@@ -5,17 +5,20 @@ KEYWORDS = [
       "then", "elseif", "else",
       "that",
       "times","do","as",
-      "what","type","convert",
+      "what","type",
       "characters","items","all",
-      "input",
-      "add","remove","split","replace","from","of","length","by","till"
+      "from","of","length","by","till",
+      "capture"
 
 ]
 
 EFFECTS = [
     "set",
     "print",
-    "wait"
+    "wait",
+    "add","remove","split","replace",
+    "input","convert",
+    "shell", "python"
 ]
 
 class Lexer:
@@ -29,14 +32,16 @@ class Lexer:
 
         self.interpreter = interpreter
       
-
+    def reg(self, name, val):
+        self.tokens.append(Token("STRING", self.ctoken, self.interpreter))
+        self.ctoken = ""
     
     def classify_tokens(self):
         stuff = self.text.split()
 
         text = self.text
         reader_pos = 0
-        token = ""
+        self.ctoken = ""
 
         in_string = False
         in_comment = False
@@ -53,18 +58,18 @@ class Lexer:
             if in_string:
                 if j == start_quote_type:
                     in_string = False
-                    self.tokens.append(Token("STRING", token, self.interpreter))
-                    token = ""
+                    self.tokens.append(Token("STRING", self.ctoken, self.interpreter))
+                    self.ctoken = ""
                 else:
-                    if start_quote_type=="'" and token=="s ":
+                    if start_quote_type=="'" and self.ctoken=="s ":
                         in_string = False
                         self.tokens.append(Token("PROPERTY","'s ",self.interpreter))
-                        token = ""
-                    token += j
+                        self.ctoken = ""
+                    self.ctoken += j
             elif in_comment:
                 if j == "\n":
                     in_comment = False
-                    token = ""
+                    self.ctoken = ""
                 else: pass
             else:
                 
@@ -83,65 +88,69 @@ class Lexer:
                         "}": "RIGHT_CURLY",
                     }[j]
                     self.tokens.append(Token(token_type, j, self.interpreter))
-                    token = ""
+                    self.ctoken = ""
                 elif j == "#":
                     in_comment = True
-                    token = ""
+                    self.ctoken = ""
                 elif j in ["'", '"']:
                     in_string = True
                     start_quote_type = j
-                    token = ""
+                    self.ctoken = ""
                 elif j in " \t\n" or reader_pos == len(text)-1:
-                    if reader_pos == len(text)-1: token += j
+                    if reader_pos == len(text)-1: self.ctoken += j
                     """
                     if j in "\n":
                         self.tokens.append(Token("NEWLINE", j, self.interpreter))
-                        token = ""
+                        self.ctoken = ""
                     """
-                    token = token.replace(" ","")
-                    if token != "":
-                        if token.isnumeric():
-                            self.tokens.append(Token("NUMBER", token, self.interpreter))
-                            token = ""
-                        elif token in ["true","false"]:
-                            self.tokens.append(Token("BOOL", token, self.interpreter))
-                            
-                            token = ""
-                        elif token == "nothing":
-                            self.tokens.append(Token("NOTHING", token, self.interpreter))
-                            token = ""
-                        elif token in ["and","or","not","contains","in","|","&"]:
-                            self.tokens.append(Token("LOGIC", token, self.interpreter))
-                            token = ""
-                        elif token in ["<", ">", "<=", ">=", "==", "!=","is"]:
-                            self.tokens.append(Token("COMPARISION", token, self.interpreter))
-                            token = ""
-                        elif token in KEYWORDS:
-                            self.tokens.append(Token("KEYWORD", token, self.interpreter))
-                            token = ""
-                        elif token in EFFECTS:
-                            self.tokens.append(Token("EFFECT",token,self.interpreter))
-                            token=""
-                        elif token in ["NUMBER","STRING","BOOL","BOOLEAN","LIST","NOTHING"]:
-                            self.tokens.append(Token("TYPE",token, self.interpreter))
-                            token=""
-                        elif token in ["if","while","create","function","loop"]:
-                            self.tokens.append(Token("STRUCTURE", token, self.interpreter))
-                            token = ""
-                        elif token in ["+", "-", "*", "/","**", "%"]:
-                            self.tokens.append(Token("OPERATOR", token, self.interpreter))
-                            token = ""
-                        elif token == "end":
-                            self.tokens.append(Token("ENDSTRUCTURE",token,self.interpreter))
-                            token = ""
-                        elif token in ["return"]:
-                            self.tokens.append(Token("BREAKSTRUCTURE",token,self.interpreter))
-                            token=""
+                    self.ctoken = self.ctoken.replace(" ","")
+                    if self.ctoken != "":
+                        if self.ctoken.isnumeric():
+                            self.tokens.append(Token("NUMBER", self.ctoken, self.interpreter))
+                            self.ctoken = ""
+                        elif self.ctoken in ["true","false"]:
+                            self.tokens.append(Token("BOOL", self.ctoken, self.interpreter))
+                            self.ctoken = ""
+                        elif self.ctoken == "nothing":
+                            self.tokens.append(Token("NOTHING", self.ctoken, self.interpreter))
+                            self.ctoken = ""
+                        elif self.ctoken in ["and","or","not","contains","in","|","&"]:
+                            self.tokens.append(Token("LOGIC", self.ctoken, self.interpreter))
+                            self.ctoken = ""
+                        elif self.ctoken in ["<", ">", "<=", ">=", "==", "!=","is"]:
+                            self.tokens.append(Token("COMPARISION", self.ctoken, self.interpreter))
+                            self.ctoken = ""
+                        elif self.ctoken in KEYWORDS:
+                            self.tokens.append(Token("KEYWORD", self.ctoken, self.interpreter))
+                            self.ctoken = ""
+                        elif self.ctoken in EFFECTS:
+                            self.tokens.append(Token("EFFECT",self.ctoken,self.interpreter))
+                            self.ctoken=""
+                        elif self.ctoken in ["NUMBER","STRING","BOOL","BOOLEAN","LIST","NOTHING"]:
+                            self.tokens.append(Token("TYPE",self.ctoken, self.interpreter))
+                            self.ctoken=""
+                        elif self.ctoken in ["if","while","create","function","loop"]:
+                            self.tokens.append(Token("STRUCTURE", self.ctoken, self.interpreter))
+                            self.ctoken = ""
+                        elif self.ctoken in ["+", "-", "*", "/","**", "%"]:
+                            self.tokens.append(Token("OPERATOR", self.ctoken, self.interpreter))
+                            self.ctoken = ""
+                        elif self.ctoken in ["miliseconds","seconds","minutes","hours","days","weeks","months","years","milisecond","second","minute","hour","day","week","month","year"]:
+                            if self.ctoken.endswith("s"):
+                                self.ctoken = self.ctoken[:-1]
+                            self.tokens.append(Token("TIME", self.ctoken, self.interpreter))
+                            self.ctoken = ""
+                        elif self.ctoken == "end":
+                            self.tokens.append(Token("ENDSTRUCTURE",self.ctoken,self.interpreter))
+                            self.ctoken = ""
+                        elif self.ctoken in ["return"]:
+                            self.tokens.append(Token("BREAKSTRUCTURE",self.ctoken,self.interpreter))
+                            self.ctoken=""
                         else:
-                            if not token in " \t\n": 
+                            if not self.ctoken in " \t\n": 
 
-                                self.tokens.append(Token("IDENTIFIER", token, self.interpreter))
-                                token = ""
+                                self.tokens.append(Token("IDENTIFIER", self.ctoken, self.interpreter))
+                                self.ctoken = ""
                         
                         
                     
@@ -150,22 +159,22 @@ class Lexer:
                     
                     """
                     if j in "   ":
-                        self.tokens.append(Token("TAB", token, self.interpreter))
-                        token = ""                   
-                    elif token == " ":
-                        self.tokens.append(Token("WHITESPACE", token, self.interpreter))
-                        token = ""
+                        self.tokens.append(Token("TAB", self.ctoken, self.interpreter))
+                        self.ctoken = ""                   
+                    elif self.ctoken == " ":
+                        self.tokens.append(Token("WHITESPACE", self.ctoken, self.interpreter))
+                        self.ctoken = ""
                     """
                 else:
-                    token += j
+                    self.ctoken += j
 
             reader_pos+= 1
 
 
                     
             '''
-            elif token in " \t\n":
-                self.tokens.append(Token("WHITESPACE", token))
+            elif self.ctoken in " \t\n":
+                self.tokens.append(Token("WHITESPACE", self.ctoken))
             '''
 
         self.tokens.append(Token("ENDSCRIPT", "", self.interpreter))

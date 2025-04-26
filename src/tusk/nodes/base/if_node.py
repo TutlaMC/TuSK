@@ -18,26 +18,28 @@ class IfNode(Node):
 
         self.end_found = False
 
-        run_if = condition
-        run_else = False
+        self.run_if = condition
+        self.run_else = False
 
-        
         
         while not self.end_found:
             nxt_tkn = self.interpreter.next_token()
             if nxt_tkn.type=="ENDSTRUCTURE":
                 self.end_found = True
             elif nxt_tkn.type=="KEYWORD" and nxt_tkn.value == "elseif":
-                if run_if == False:
+                if self.run_if == False:
                     if ConditionNode(self.interpreter.next_token()).value:
                         self.interpreter.expect_token("KEYWORD:then")
-                        run_if = True
-                    else: run_if = False
+                        self.run_if = True
+                    else: self.run_if = False
             elif nxt_tkn.type=="KEYWORD" and nxt_tkn.value == "else":
-                if run_if == False:
-                    run_else = True
+                if self.run_if == False:
+                    self.run_else = True
+                else: 
+                    self.run_else = False
+                    self.run_if = False
             else: 
-                if run_if or run_else:
+                if self.run_if or self.run_else:
                     StatementNode(nxt_tkn)
                     
        

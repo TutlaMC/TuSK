@@ -1,10 +1,8 @@
 Next Update:
-- proper time stamps
 - post/get requests
 - exec and python
-- tson
-- add nothing
 - detailed errors
+- index
 
 The update after that:
 - Discord Events

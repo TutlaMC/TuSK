@@ -18,6 +18,20 @@ class FactorNode(Node):
 
         if self.value.type == "NUMBER":
             self.value = float(self.value.value)
+            if self.interpreter.get_next_token().type == "TIME":
+                time_key = {
+                    "milisecond": 0.001,
+                    "second": 1,
+                    "minute": 60,
+                    "hour": 3600,
+                    "day": 86400,
+                    "week": 604800,
+                    "month": 2592000,
+                    "year": 31536000
+                }
+                
+                e = self.interpreter.next_token()
+                self.value = self.value * time_key[e.value]
         elif self.value.type == "STRING":
             self.value = str(self.value.value)
         elif self.value.type == "BOOL":
@@ -33,64 +47,34 @@ class FactorNode(Node):
                 if nxt_tkn.type=="KEYWORD" and nxt_tkn.value == "type":
                     self.interpreter.expect_token("COMPARISION:is")
                     self.value = get_type_(self.interpreter.next_token())
-            elif self.value.value == "input":
-                self.value = input(ExpressionNode(self.interpreter.next_token()).value)
-            elif self.value.value == "convert":
-                val = ExpressionNode(self.interpreter.next_token()).value
-                self.interpreter.expect_token("KEYWORD:to")
-                self.value = types_[self.interpreter.next_token().value](val)
             
+
+                        
+        elif self.value.type == "EFFECT":
+            if self.value.value == "input":
+                from tusk.nodes.effects.input_ import InputNode
+                self.value = InputNode(self.value).value
+            elif self.value.value == "convert":
+                from tusk.nodes.effects.types_ import ConvertNode
+                self.value = ConvertNode(self.value).value
             elif self.value.value == "add":
-                item = ExpressionNode(self.interpreter.next_token()).value
-                self.interpreter.expect_token("KEYWORD:to")
-                list_ = ExpressionNode(self.interpreter.next_token()).value
-                if type(list_) != list: 
-                    self.value = item+list_
-                else:
-                    list_.append(item)
-                    self.value = list_
+                from tusk.nodes.effects.string_list_common import AddNode
+                self.value = AddNode(self.value).value
             elif self.value.value == "remove":
-                item = is_ordinal_number(self.interpreter.next_token())
-                self.interpreter.expect_token("KEYWORD:item")
-                if item:
-                    item-=1
-                    self.interpreter.expect_token("KEYWORD:from")
-                    list_ = ExpressionNode(self.interpreter.next_token()).value
-                    if type(list_) != list: 
-                        raise Exception(f"remove requires <list> not {type(list_)}")
-                    else:
-                        list_.pop(item)
-                        self.value = list_
-                else: raise Exception(f"remove expected ordinal number not {self.interpreter.current_token.value}, cardinal numbers are 1st, 2nd, 3rd, 4th, 5th...")
+                from tusk.nodes.effects.string_list_common import RemoveNode
+                self.value = RemoveNode(self.value).value
             elif self.value.value == "replace":
-                to_replace = str(ExpressionNode(self.interpreter.next_token()).value)
-                self.interpreter.expect_token("KEYWORD:with")
-                with_replace = str(ExpressionNode(self.interpreter.next_token()).value)
-                self.interpreter.expect_token("LOGIC:in")
-                self.value = str(ExpressionNode(self.interpreter.next_token()).value).replace(to_replace,with_replace)
+                from tusk.nodes.effects.string_list_common import ReplaceNode
+                self.value = ReplaceNode(self.value).value
             elif self.value.value == "length":
-                self.interpreter.expect_token("KEYWORD:of")
-                self.value = len(ExpressionNode(self.interpreter.next_token()).value)
+                from tusk.nodes.effects.string_list_common import LengthNode
+                self.value = LengthNode(self.value).value
             elif self.value.value == "split":
-                to_split = ExpressionNode(self.interpreter.next_token()).value
-                nxt_tkn = self.interpreter.next_token()
-                from_ = 0
-                till_ = len(to_split)
-                if nxt_tkn.type == "KEYWORD":
-                    if nxt_tkn.value == "by": self.value = to_split.split(self.interpreter.expect_token("STRING").value)
-                    elif nxt_tkn.value in ["from", "till"]:
-                        _value = ExpressionNode(self.interpreter.next_token()).value
-                        if self.interpreter.get_next_token().type == "KEYWORD" and self.interpreter.get_next_token().value == "till":
-                            self.interpreter.next_token()
-                            from_ = _value
-                            till_ = ExpressionNode(self.interpreter.next_token()).value
-                        else: from_ = _value
-                        self.value = to_split[int(from_):int(till_)]
-                        
-                    else:raise Exception(f"Expected token KEYWORD:by | KEYWORD:from | KEYWORD:to got {nxt_tkn.type}")
-
-                        
-
+                from tusk.nodes.effects.string_list_common import SplitNode
+                self.value = SplitNode(self.value).value
+            elif self.value.value == "shell":
+                from tusk.nodes.effects.exec_ import ShellNode
+                self.value = ShellNode(self.value).value
         elif self.value.type == "IDENTIFIER":
             if is_ordinal_number(self.value):
                 n = is_ordinal_number(value)-1
@@ -162,7 +146,7 @@ class TermNode(Node):
             operator = self.interpreter.get_next_token()
             if operator.value in ["*","/","**","^"]:
                 operator = self.interpreter.next_token()
-                tkn2 = FactorNode(self.interpreter.next_token())
+                tkn2 = ExpressionNode(self.interpreter.next_token())
                 if operator.value == "*":
                     self.value = tkn1.value * tkn2.value
                 elif operator.value == "/":

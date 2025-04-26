@@ -1,0 +1,9 @@
+set x to convert input "What's your age buddy? " to NUMBER
+
+if x < 18 then
+    print "You are underage!"
+elseif x > 18 then
+    print "You are allowed to enter!"
+else
+    print "You are damn lucky"
+end
