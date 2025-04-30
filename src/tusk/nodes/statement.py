@@ -1,4 +1,4 @@
-import time
+import time, asyncio
 
 from tusk.node import Node
 from tusk.token import Token
@@ -6,7 +6,8 @@ from tusk.variable import  Variable
 from tusk.nodes.base.if_node import *
 from tusk.nodes.base.function import *
 from tusk.nodes.base.loops import WhileNode, LoopNode
-
+from tusk.nodes.del_ import DelNode
+from tusk.nodes.expressions import *
 
 class StatementNode(Node):
     def __init__(self, token:Token):
@@ -20,32 +21,18 @@ class StatementNode(Node):
                     e = ExpressionNode(self.interpreter.next_token())
                     print(e.value)
                 elif token.value == "set":
-                    name = self.interpreter.next_token()
-                    if is_ordinal_number(name):
-                        n = is_ordinal_number(name)-1
-                        self.interpreter.next_token()
-                        self.interpreter.expect_token("LOGIC:in")
-                        e = self.interpreter.data["vars"][self.interpreter.next_token().value] # TODO: Make this NameNode
-                        self.interpreter.expect_token("KEYWORD:to")
-                        e.value[n] = ExpressionNode(self.interpreter.next_token()).value
-                    else:
-                        """
-                        vname = name.value
-                        to_set = self.interpreter.data["vars"]
-                        while self.interpreter.get_next_token().type == "PROPERTY":
-                            to_set = to_set[vname]
-                            self.interpreter.next_token()
-                            vname = self.interpreter.expect_token("IDENTIFIER").value
-                            to_set = to_set.properties
-                        """
-                        n = NameNode(self.interpreter.current_token)
-
-
-                        self.interpreter.expect_token("KEYWORD:to")
-                        value = ExpressionNode(self.interpreter.next_token()).value
-                        n.location[n.name] = Variable(n.name,value)
+                    from tusk.nodes.effects.set import SetNode
+                    SetNode(token)
                 elif token.value == "wait":
                     time.sleep(ExpressionNode(self.interpreter.next_token()).value)
+                elif token.value == "delete":
+                    DelNode(token)
+                elif self.value.value == "write":
+                    from tusk.nodes.effects.fs import WriteNode
+                    WriteNode(self.value)
+                elif self.value.value == "rename":
+                    from tusk.nodes.effects.fs import RenameNode
+                    RenameNode(self.value)
             elif token.type == "STRUCTURE":
                 if token.value == "if":
                     IfNode(self.interpreter.next_token())

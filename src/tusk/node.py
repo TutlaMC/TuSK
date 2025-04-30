@@ -21,3 +21,5 @@ class Node:
             self.value = values[0]
             self.left_node = self.value
         else: raise Exception("Node type not found")
+
+# i have no clue what this is so js ignore this class, everything would still work if u didnt use this Node as the base NODe

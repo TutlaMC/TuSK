@@ -93,3 +93,33 @@ class LengthNode(Node):
         
         self.interpreter.expect_token("KEYWORD:of")
         self.value = len(ExpressionNode(self.interpreter.next_token()).value)
+
+class GetNode(Node): ### THIS IS A KEYWORD EVEN THOUGH ITS IN EFFECTS
+    def __init__(self, token: Token):
+        self.interpreter = token.interpreter
+        
+        self.interpreter.expect_token("KEYWORD:item|KEYWORD:character")
+        self.interpreter.expect_token("KEYWORD:number")
+        index = ExpressionNode(self.interpreter.next_token()).value
+        self.interpreter.expect_token("KEYWORD:of")
+        list_ = ExpressionNode(self.interpreter.next_token()).value
+        if type(list_) == str:
+            self.value = list_[int(index)-1]
+        elif type(list_) == list:
+            self.value = list_[int(index)-1]
+
+class IndexNode(Node):
+    def __init__(self, token: Token):
+        self.interpreter = token.interpreter
+        
+        to_index = ExpressionNode(self.interpreter.next_token()).value
+        self.interpreter.expect_token("LOGIC:in")
+        list_ = ExpressionNode(self.interpreter.next_token()).value
+        if type(list_) == str:
+            self.value = list_.index(to_index)
+        elif type(list_) == list:
+            self.value = list_.index(to_index)
+        elif type(list_) == dict:
+            self.value = list_.index(to_index)
+        else:
+            raise Exception(f"index requires <string> or <list> not {type(list_)}")

@@ -8,7 +8,10 @@ KEYWORDS = [
       "what","type",
       "characters","items","all",
       "from","of","length","by","till",
-      "capture"
+      "capture",
+      "get","post","headers","tson",
+      "character","item","number",
+     "file", "variable"
 
 ]
 
@@ -16,9 +19,13 @@ EFFECTS = [
     "set",
     "print",
     "wait",
-    "add","remove","split","replace",
+    "add","remove","split","replace", 
     "input","convert",
-    "shell", "python"
+    "shell", "python",
+    "request",
+    "index",
+    "read","write","rename",
+    "delete"
 ]
 
 class Lexer:

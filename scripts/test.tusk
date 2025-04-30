@@ -1,1 +1,14 @@
-print shell "blender"
+function gyaa num1 that
+    print num1
+    wait 10 seconds
+end
+
+
+print "hello"
+print "hello"
+print "hello"
+print "hello"
+gyaa 5
+gyaa 5
+gyaa 5
+gyaa 5

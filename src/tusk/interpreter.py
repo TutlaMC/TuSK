@@ -1,5 +1,6 @@
 import re
 import math
+import asyncio
 
 from tusk.lexer import *
 
@@ -29,7 +30,8 @@ class Interpreter:
                 },
                 "local":{
 
-                }
+                },
+                "async_tasks":[]
             }
         else:
             self.data = data
@@ -49,7 +51,6 @@ class Interpreter:
 
     def compile(self):
         while self.pos <= len(self.tokens)-1:
-
             if self.current_token.type == "ENDSCRIPT":
                 break
             elif self.current_token.type == "NEWLINE":
@@ -59,12 +60,12 @@ class Interpreter:
                 ReturnNode(self.current_token)
                 break
             else:
-                StatementNode(self.current_token)
-
-        
-
-            
-
+                try:
+                    StatementNode(self.current_token)
+                except Exception as e:
+                    print(e)
+                    print(self.arrows_at_pos())
+                    raise e
 
             # READER
             #if self.current_token.type == "SET":
@@ -74,6 +75,8 @@ class Interpreter:
             # once this shi is done
             if self.get_next_token() == None: break
             else: self.next_token()
+
+
 
         return self.return_value
             

@@ -1,4 +1,5 @@
 import re
+import asyncio
 
 from tusk.node import Node
 from tusk.token import Token
@@ -8,6 +9,7 @@ class FunctionNode(Node):
     def __init__(self, token: Token):
         from tusk.interpreter import Interpreter
         from tusk.nodes.statement import StatementNode
+        from tusk.nodes.expressions import ExpressionNode
         self.interpreter = token.interpreter
 
         self.name = token.value
@@ -105,3 +107,28 @@ class FunctionNode(Node):
         """
                     
 
+class ExecuteFunctionNode(Node):
+    def __init__(self, token: Token):
+        from tusk.nodes.expressions import ExpressionNode
+        self.interpreter = token.interpreter
+
+        self.name = token.value
+        
+        func = token.interpreter.data["funcs"][token.value] # [[], interpreter]
+        func_name= token.value
+        func_interpreter = func[1]
+        parased_params = []
+        if len(func[0]) > 0: # length of params, function doesnt need params
+            for param in func[0]: # looping params (func[0] is the param list)
+                e = self.interpreter.next_token() # next token, the code afer this checks if it matches the required param
+                node = ExpressionNode(e)
+                if len(param.split(":")) > 1:
+                    if get_type_(node.value) == param.split(":")[0].upper():
+                        parased_params.append([param.split(":")[1],node.value])
+                    else:
+                        raise Exception(f"Recieved type {get_type_(ExpressionNode(e))} instead of {param.split(':')[0]} in function {token.value} ") 
+                else:
+                            parased_params.append([param,node.value])
+        for i in parased_params: func_interpreter.data["vars"][i[0]] = i[1]
+        func_interpreter.data["funcs"] = self.interpreter.data["funcs"]
+        self.value = func_interpreter.compile()

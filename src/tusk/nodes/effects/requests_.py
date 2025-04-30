@@ -1,0 +1,66 @@
+from tusk.token import Token
+from tusk.node import Node
+from tusk.nodes.expressions import ExpressionNode
+from tusk.variable import Variable
+
+import requests
+
+class Reponse(Variable):
+    def __init__(self,response:requests.Response):
+        self.name = "reponse"
+        
+        self.properties = {
+            "status_code": response.status_code,
+            "headers": response.headers,
+            "content": response.content,
+            "text": response.text,
+            "url": response.url,
+        }
+        try:
+            self.properties["tson"] = response.json()
+        except Exception:
+            pass
+
+        self.value = response.text
+        
+
+
+class RequestNode(Node):
+    def __init__(self, token: Token):
+        self.token = token
+        self.interpreter = token.interpreter
+
+        self.url = str(ExpressionNode(self.interpreter.next_token()).value).replace(" ","")
+        data = {
+            "headers": {},
+            "data": {},
+            "tson": {},
+            "files": {},
+            "params": {},
+            "cookies": {},
+        }
+
+        typ = self.interpreter.next_token()
+
+        if typ.type == "KEYWORD" and typ.value == "get":
+            if self.interpreter.get_next_token().type == "KEYWORD" and self.interpreter.get_next_token().value == "with":
+                self.interpreter.next_token()
+                while self.interpreter.get_next_token().value in data.keys():
+                    name = self.interpreter.next_token().value
+                    self.interpreter.expect_token("KEYWORD:as")
+                    data[name] = ExpressionNode(self.interpreter.next_token()).value
+                    if self.interpreter.get_next_token().value == ",":
+                        self.interpreter.next_token()
+                    else:
+                        break
+            
+            self.value = Reponse(requests.get(self.url, params=data["params"], headers=data["headers"], files=data["files"], cookies=data["cookies"], json=data["tson"]))
+            
+        elif typ.type == "KEYWORD" and typ.value == "post": 
+            pass
+        else: 
+            raise Exception(f"Invalid request type: {typ.value}")
+
+        self.returned_var = None
+        
+        

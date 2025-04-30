@@ -2,7 +2,9 @@ from tusk.node import Node
 from tusk.token import Token
 from tusk.variable import *
 from tusk.nodes.base.name import NameNode
+from tusk.nodes.base.function import ExecuteFunctionNode
 
+import asyncio
 class FactorNode(Node):
     def __init__(self, value:Token, rules=[]):
         super().__init__("1n", "FactorNode", [value], auto_eval=True)
@@ -12,9 +14,9 @@ class FactorNode(Node):
         self.value = value
         self.orginal_token = value
         self.auto_eval = True
+        self.returned_var = None
 
         self.type = "1n"
-        
 
         if self.value.type == "NUMBER":
             self.value = float(self.value.value)
@@ -47,8 +49,9 @@ class FactorNode(Node):
                 if nxt_tkn.type=="KEYWORD" and nxt_tkn.value == "type":
                     self.interpreter.expect_token("COMPARISION:is")
                     self.value = get_type_(self.interpreter.next_token())
-            
-
+            elif self.value.value == "get":
+                from tusk.nodes.effects.string_list_common import GetNode
+                self.value = GetNode(self.value).value
                         
         elif self.value.type == "EFFECT":
             if self.value.value == "input":
@@ -72,38 +75,36 @@ class FactorNode(Node):
             elif self.value.value == "split":
                 from tusk.nodes.effects.string_list_common import SplitNode
                 self.value = SplitNode(self.value).value
+            elif self.value.value == "index":
+                from tusk.nodes.effects.string_list_common import IndexNode
+                self.value = IndexNode(self.value).value
             elif self.value.value == "shell":
                 from tusk.nodes.effects.exec_ import ShellNode
                 self.value = ShellNode(self.value).value
+            elif self.value.value == "python":
+                from tusk.nodes.effects.exec_ import PythonNode
+                self.value = PythonNode(self.value).value
+            elif self.value.value == "request":
+                from tusk.nodes.effects.requests_ import RequestNode
+                self.value = RequestNode(self.value).value
+            elif self.value.value == "read":
+                from tusk.nodes.effects.fs import ReadNode
+                self.value = ReadNode(self.value).value
+            
+                
         elif self.value.type == "IDENTIFIER":
             if is_ordinal_number(self.value):
                 n = is_ordinal_number(value)-1
                 self.interpreter.expect_token("KEYWORD:character|KEYWORD:item")
                 self.interpreter.expect_token("LOGIC:in")
-                list_ = ExpressionNode(self.interpreter.next_token()).value
+                list_ = FactorNode(self.interpreter.next_token()).value
                 self.value = list_[n]
                 
             elif self.value.value in self.value.interpreter.data["vars"]:
                 self.value = NameNode(self.value).value
             elif self.value.value in self.value.interpreter.data["funcs"]: # calls function
+                ExecuteFunctionNode(self.value)
                 
-                func = self.value.interpreter.data["funcs"][self.value.value] # [[], interpreter]
-                func_name= self.value.value
-                func_interpreter = func[1]
-                parased_params = []
-                if len(func[0]) > 0: # length of params, function doesnt need params
-                    for param in func[0]: # looping params (func[0] is the param list)
-                        e = self.interpreter.next_token() # next token, the code afer this checks if it matches the required param
-                        node = ExpressionNode(e)
-                        if len(param.split(":")) > 1:
-                            if get_type_(node.value) == param.split(":")[0].upper():
-                                parased_params.append([param.split(":")[1],node.value])
-                            else:
-                                raise Exception(f"Recieved type {get_type_(ExpressionNode(e))} instead of {param.split(':')[0]} in function {self.value.value} ") 
-                        else:
-                            parased_params.append([param,node.value])
-                for i in parased_params: func_interpreter.data["vars"][i[0]] = i[1]
-                self.value = func_interpreter.compile()
 
             else: raise Exception(f"Undefined variable {self.value.value}")
         elif self.value.type == "LEFT_CURLY":
@@ -139,6 +140,7 @@ class TermNode(Node):
         self.auto_eval = True
         self.interpreter = factor.interpreter
         self.rules = rules
+        self.returned_var = None
         
         
         tkn1 = FactorNode(factor,rules=self.rules)
@@ -163,6 +165,7 @@ class ExpressionNode(Node):
         self.interpreter = token.interpreter
         self.auto_eval = True
         self.rules = rules
+        self.returned_var = None
 
 
         if token.type=="OPERATOR" and token.value == "-": # Negative Numbers

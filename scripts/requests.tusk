@@ -1,0 +1,2 @@
+set x to request "https://google.com" get
+print x's status_code

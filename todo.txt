@@ -1,11 +1,3 @@
-Next Update:
-- post/get requests
-- exec and python
-- detailed errors
-- index
+Add:
 
-The update after that:
-- Discord Events
-    - use interpreter and set data["vars"]["event-message"] to Message
-- Send Message
-- Get Message/Channel/Server/User/Role/Member
+- Discord shi
