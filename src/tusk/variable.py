@@ -22,10 +22,13 @@ types_ = {
     "TSON": dict,
     "NOTHING": None,
 }
-def get_type_(token):
+async def get_type_(token):
     
     from tusk.nodes.expressions import ExpressionNode
-    if type(token) == Token: type_ = type(ExpressionNode(token).value)
+    
+    if type(token) == Token: 
+        e = await ExpressionNode(token).create()
+        type_ = type(e.value)
     else: type_ = type(token)
     if type_ == float or type_ == int : return "NUMBER"
     elif type_ == str: return "STRING"

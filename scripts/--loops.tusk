@@ -15,6 +15,10 @@ loop all items in x
     print what type is loop_item
 end
 
+loop all items in x as bbc
+    print bbc
+end
+
 # Remove all the "#" at the beggining of this segment to run a forever loop
 # set x to 1
 # while true do

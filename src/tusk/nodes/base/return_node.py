@@ -8,8 +8,10 @@ class ReturnNode(Node):
         self.interpreter = token.interpreter
         self.auto_eval = True
         self.type="1en"
+        self.token = token
 
-
-        self.interpreter.return_value = ExpressionNode(self.interpreter.next_token()).value
+    async def create(self):
+        self.interpreter.return_value = (await ExpressionNode(self.interpreter.next_token()).create()).value
+        return self
 
         

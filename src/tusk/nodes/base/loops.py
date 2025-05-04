@@ -11,11 +11,12 @@ class WhileNode(Node):
         self.cpos = self.interpreter.pos # position of condition start
         self.ecpos = self.cpos # position at ENDSTRUCTURE
 
-        
-        condition = ConditionNode(token).value
+    async def create(self):
+        from tusk.nodes.statement import StatementNode
+        condition = await ConditionNode(self.token).create()
         self.interpreter.expect_token("KEYWORD:do")
 
-        self.end_done = condition
+        self.end_done = condition.value
         
         fned = False
         while fned != True:
@@ -26,27 +27,25 @@ class WhileNode(Node):
             else: 
                 self.interpreter.next_token()
         self.interpreter.pos = self.cpos
-        ConditionNode(self.token)       
-        
-
-        
+        await ConditionNode(self.token).create()       
         
         while self.end_done:
             nxt_tkn = self.interpreter.next_token()
             if nxt_tkn.type=="ENDSTRUCTURE":
-                self.check()
+                await self.check()
             else: 
-                StatementNode(nxt_tkn)
+                await StatementNode(nxt_tkn).create()
 
              # recheck the condition
         self.interpreter.pos = self.ecpos
-            
+        return self
 
-    def check(self):
+    async def check(self):
         self.interpreter.pos = self.cpos
-        condition = ConditionNode(self.token).value
+        condition = await ConditionNode(self.token).create()
         self.interpreter.expect_token("KEYWORD:do")
-        self.end_done = condition
+        self.end_done = condition.value
+        return self
             
 class LoopNode(Node):
     def __init__(self, token: Token):        
@@ -56,32 +55,31 @@ class LoopNode(Node):
 
         self.as_ = None
         self.times = 0
-        if token.type=="NUMBER":
-            self.times = range(int(FactorNode(token).value))
+
+    async def create(self):
+        from tusk.nodes.expressions import FactorNode, ExpressionNode
+        if self.token.type=="NUMBER":
+            self.times = range(int((await FactorNode(self.token).create()).value))
             self.interpreter.expect_token("KEYWORD:times")
-            e = self.set_as(token=self.interpreter.get_next_token())
-            self.loop()
-        elif token.type=="KEYWORD" and token.value == "all":
+            e = await self.set_as(token=self.interpreter.get_next_token())
+            await self.loop()
+        elif self.token.type=="KEYWORD" and self.token.value == "all":
             loop_target_type = self.interpreter.expect_token("KEYWORD:items|KEYWORD:characters").value
             self.interpreter.expect_token("LOGIC:in")
             if loop_target_type == "characters":
-                self.times = str(ExpressionNode(self.interpreter.next_token()).value)
-                e = self.set_as(token=self.interpreter.get_next_token())
-                self.loop()
+                self.times = str((await ExpressionNode(self.interpreter.next_token()).create()).value)
+                e = await self.set_as(token=self.interpreter.get_next_token())
+                await self.loop()
             elif loop_target_type == "items":
-                self.times = ExpressionNode(self.interpreter.next_token()).value
-                e = self.set_as(token=self.interpreter.get_next_token())
-                self.loop()
+                self.times = (await ExpressionNode(self.interpreter.next_token()).create()).value
+                e = await self.set_as(token=self.interpreter.get_next_token())
+                await self.loop()
         
         else:
-            raise Exception(f"loop expected token KEYWORD | NUMBER got {token.type}")
+            raise Exception(f"loop expected token KEYWORD | NUMBER got {self.token.type}")
+        return self
 
-            
-        
-
-
-            
-    def set_as(self, token:Token=None,value=None):
+    async def set_as(self, token:Token=None,value=None):
         if value != None:
             self.interpreter.data["vars"][self.as_] = value
         else:
@@ -94,12 +92,14 @@ class LoopNode(Node):
             else:
                 self.as_ = "loop_item"
                 self.interpreter.data["vars"][self.as_] = None
-    def loop(self):
-        from tusk.nodes.statement import StatementNode
+        return self
 
+    async def loop(self):
+        from tusk.nodes.statement import StatementNode
+        from tusk.variable import Variable
         pos = self.interpreter.pos
         for i in self.times: 
-            self.set_as(value=Variable(self.as_,i))
+            await self.set_as(value=Variable(self.as_,i))
 
             end_block = False
             self.interpreter.pos = pos
@@ -109,7 +109,7 @@ class LoopNode(Node):
                     end_block =True
                     break
                 else:
-                    StatementNode(nxt_tkn)
+                    await StatementNode(nxt_tkn).create()
                 
             
         

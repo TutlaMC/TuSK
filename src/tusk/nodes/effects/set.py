@@ -9,6 +9,7 @@ class SetNode(Node):
         self.token = token
         self.interpreter = token.interpreter
 
+    async def create(self):
         name = self.interpreter.next_token()
         if is_ordinal_number(name):
             print("guh")
@@ -17,7 +18,7 @@ class SetNode(Node):
             self.interpreter.expect_token("LOGIC:in")
             e = NameNode(self.interpreter.next_token())
             self.interpreter.expect_token("KEYWORD:to")
-            e.value[n] = ExpressionNode(self.interpreter.next_token()).value
+            e.value[n] = (await ExpressionNode(self.interpreter.next_token()).create()).value
         else:
             """
                         vname = name.value
@@ -28,13 +29,18 @@ class SetNode(Node):
                             vname = self.interpreter.expect_token("IDENTIFIER").value
                             to_set = to_set.properties
             """
-            n = NameNode(self.interpreter.current_token)
+            n = (await NameNode(self.interpreter.current_token).create())
 
 
             self.interpreter.expect_token("KEYWORD:to")
-            value = ExpressionNode(self.interpreter.next_token()).value
+            value = (await ExpressionNode(self.interpreter.next_token()).create()).value
             if isinstance(value, Variable):
                 value.name = n.name
                 n.location[n.name] = value
+                self.interpreter.data["vars"]["it"] = value
+                self.interpreter.data["vars"]["this"] = value
             else:
                 n.location[n.name] = Variable(n.name,value)
+                self.interpreter.data["vars"]["it"] = value
+                self.interpreter.data["vars"]["this"] = value
+                

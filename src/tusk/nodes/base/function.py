@@ -5,14 +5,19 @@ from tusk.node import Node
 from tusk.token import Token
 from tusk.nodes.condition import *
 
+from tusk.variable import Variable, types_
+
 class FunctionNode(Node):
     def __init__(self, token: Token):
+        
+        self.interpreter = token.interpreter
+        self.token = token
+
+    async def create(self):
         from tusk.interpreter import Interpreter
         from tusk.nodes.statement import StatementNode
         from tusk.nodes.expressions import ExpressionNode
-        self.interpreter = token.interpreter
-
-        self.name = token.value
+        self.name = self.token.value
         self.params = []
 
         """
@@ -70,7 +75,7 @@ class FunctionNode(Node):
         self.tokens.append(Token("ENDSCRIPT", "", self.interpreter))
 
 
-        self.function_interpreter.setup(tokens=self.tokens,data=self.interpreter.data)
+        self.function_interpreter.setup(tokens=self.tokens,data=self.interpreter.data,bot=self.interpreter.bot)
         self.interpreter.data["funcs"][self.name].append(self.function_interpreter)
         
     
@@ -105,13 +110,19 @@ class FunctionNode(Node):
                 self.statement_complete = True
 
         """
+    
+        return self
                     
 
 class ExecuteFunctionNode(Node):
     def __init__(self, token: Token):
-        from tusk.nodes.expressions import ExpressionNode
         self.interpreter = token.interpreter
+        self.token = token
 
+    async def create(self):
+        from tusk.nodes.expressions import ExpressionNode
+        from tusk.variable import get_type_
+        token = self.token
         self.name = token.value
         
         func = token.interpreter.data["funcs"][token.value] # [[], interpreter]
@@ -121,14 +132,15 @@ class ExecuteFunctionNode(Node):
         if len(func[0]) > 0: # length of params, function doesnt need params
             for param in func[0]: # looping params (func[0] is the param list)
                 e = self.interpreter.next_token() # next token, the code afer this checks if it matches the required param
-                node = ExpressionNode(e)
+                node = (await ExpressionNode(e).create())
                 if len(param.split(":")) > 1:
-                    if get_type_(node.value) == param.split(":")[0].upper():
+                    if (await get_type_(node.value)) == param.split(":")[0].upper():
                         parased_params.append([param.split(":")[1],node.value])
                     else:
-                        raise Exception(f"Recieved type {get_type_(ExpressionNode(e))} instead of {param.split(':')[0]} in function {token.value} ") 
+                        raise Exception(f"Recieved type {(await get_type_(await ExpressionNode(e).create()))} instead of {param.split(':')[0]} in function {token.value} ") 
                 else:
                             parased_params.append([param,node.value])
         for i in parased_params: func_interpreter.data["vars"][i[0]] = i[1]
         func_interpreter.data["funcs"] = self.interpreter.data["funcs"]
-        self.value = func_interpreter.compile()
+        self.value = await func_interpreter.compile()
+        return self

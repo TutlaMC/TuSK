@@ -1,0 +1,6 @@
+on message
+    if event_message's content is "tell me a fact" then
+        set response to request "https://uselessfacts.jsph.pl/random.json" get
+        send get "text" in response's json to event_channel
+    end
+end

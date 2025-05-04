@@ -17,9 +17,9 @@ class Reponse(Variable):
             "url": response.url,
         }
         try:
-            self.properties["tson"] = response.json()
+            self.properties["json"] = response.json()
         except Exception:
-            pass
+            print("NO JSON")
 
         self.value = response.text
         
@@ -27,40 +27,74 @@ class Reponse(Variable):
 
 class RequestNode(Node):
     def __init__(self, token: Token):
+        self.interpreter= token.interpreter
         self.token = token
-        self.interpreter = token.interpreter
-
-        self.url = str(ExpressionNode(self.interpreter.next_token()).value).replace(" ","")
+        
+    async def create(self):
+        self.interpreter.debug_msg(self.token)
+        url = (await ExpressionNode(self.interpreter.next_token()).create()).value
+        self.url = url.replace(" ","")
         data = {
             "headers": {},
             "data": {},
-            "tson": {},
+            "json": {},
             "files": {},
             "params": {},
             "cookies": {},
         }
 
-        typ = self.interpreter.next_token()
 
+        typ = self.interpreter.next_token()
+        
         if typ.type == "KEYWORD" and typ.value == "get":
             if self.interpreter.get_next_token().type == "KEYWORD" and self.interpreter.get_next_token().value == "with":
                 self.interpreter.next_token()
                 while self.interpreter.get_next_token().value in data.keys():
-                    name = self.interpreter.next_token().value
+                    name = self.interpreter.next_token().value.replace(" ","")
                     self.interpreter.expect_token("KEYWORD:as")
-                    data[name] = ExpressionNode(self.interpreter.next_token()).value
-                    if self.interpreter.get_next_token().value == ",":
+                    data[name] = (await ExpressionNode(self.interpreter.next_token()).create()).value
+                    if self.interpreter.get_next_token().value == "and":
                         self.interpreter.next_token()
                     else:
                         break
-            
-            self.value = Reponse(requests.get(self.url, params=data["params"], headers=data["headers"], files=data["files"], cookies=data["cookies"], json=data["tson"]))
+
+            if "headers" in data:
+                if "origin" in data["headers"]:
+                    data["headers"]["origin"] = data["headers"]["origin"].replace(" ","")
+                if "user-agent" in data["headers"]:
+                    data["headers"]["user-agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36"
+            print(data, "get")
+            self.value = Reponse(requests.get(self.url, params=data["params"], files=data["files"], cookies=data["cookies"], headers=data["headers"], json=data["json"]))
+
             
         elif typ.type == "KEYWORD" and typ.value == "post": 
-            pass
+            if self.interpreter.get_next_token().type == "KEYWORD" and self.interpreter.get_next_token().value == "with":
+                self.interpreter.next_token()
+                while self.interpreter.get_next_token().value in data.keys():
+                    name = self.interpreter.next_token().value.replace(" ","")
+                    self.interpreter.expect_token("KEYWORD:as")
+                    data[name] = (await ExpressionNode(self.interpreter.next_token()).create()).value
+                    if self.interpreter.get_next_token().value == "and":
+                        self.interpreter.next_token()
+                    else:
+                        break
+
+            if "headers" in data:   
+                if "origin" in data["headers"]:
+                    data["headers"]["origin"] = data["headers"]["origin"].replace(" ","")
+                for i in data["headers"].copy().keys():
+                    if "-" in i:
+                        data["headers"][i.replace(" - ","-")] = data["headers"][i]
+                        data["headers"].pop(i)
+                if "user-agent" in data["headers"]:
+                    data["headers"]["user-agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36"
+            print(data, "post")
+            self.value = Reponse(requests.post(self.url,headers=data["headers"], json=data["json"]))
+                    
         else: 
             raise Exception(f"Invalid request type: {typ.value}")
 
         self.returned_var = None
+        return self
         
         

@@ -11,29 +11,35 @@ class ShellNode(Node):
     def __init__(self, token: Token):
         from tusk.variable import types_
         self.interpreter = token.interpreter
+        self.token = token
         
+    async def create(self):
         capture = False
         if self.interpreter.get_next_token().type == "KEYWORD" and self.interpreter.get_next_token().value == "capture":
             self.interpreter.next_token()
             capture = True
         
         if capture:
-            self.value = subprocess.run(str(ExpressionNode(self.interpreter.next_token()).value), shell=True)
+            self.value = subprocess.run(str((await ExpressionNode(self.interpreter.next_token()).create()).value), shell=True, text=True)
         else: 
-            self.value = subprocess.check_output(str(ExpressionNode(self.interpreter.next_token()).value), shell=True, text=True)
+            self.value = subprocess.check_output(str((await ExpressionNode(self.interpreter.next_token()).create()).value), shell=True, text=True)
+            
 
+        return self
 
 class PythonNode(Node):
     def __init__(self, token: Token):
         from tusk.variable import types_
         self.interpreter = token.interpreter
+        self.token = token
         
+    async def create(self):
         capture = False
         if self.interpreter.get_next_token().type == "KEYWORD" and self.interpreter.get_next_token().value == "capture":
             self.interpreter.next_token()
             capture = True
         
-        code = str(ExpressionNode(self.interpreter.next_token()).value)
+        code = str((await ExpressionNode(self.interpreter.next_token()).create()).value)
         
         if capture:
             old_stdout = sys.stdout
@@ -51,4 +57,5 @@ class PythonNode(Node):
         else:
             exec(code)
             self.value = None
+        return self
 

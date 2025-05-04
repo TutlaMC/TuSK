@@ -1,11 +1,12 @@
 from tusk.node import Node
 from tusk.token import Token
-from tusk.nodes.expressions import *
+
 
 class ConditionNode(Node):
     def __init__(self,token:Token):
         self.interpreter = token.interpreter
         self.auto_eval = True
+        self.token = token
 
         self.opposite = False
 
@@ -13,10 +14,14 @@ class ConditionNode(Node):
             self.opposite = True
             token = self.interpreter.next_token()
         
-        tkn1 = ExpressionNode(token)
-        if token.interpreter.get_next_token().type == "LOGIC":
+        self.token = token
+
+    async def create(self):
+        from tusk.nodes.expressions import ExpressionNode
+        tkn1 = await ExpressionNode(self.token).create()
+        if self.token.interpreter.get_next_token().type == "LOGIC":
             operator = self.interpreter.next_token()
-            tkn2 = ExpressionNode(self.interpreter.next_token())
+            tkn2 = await ExpressionNode(self.interpreter.next_token()).create()
             if operator.value == "and" or operator.value == "&":
                 if tkn1.value == True and tkn2.value == True: self.value = True
                 else: self.value = False  
@@ -38,3 +43,5 @@ class ConditionNode(Node):
         if self.opposite: 
             if self.value == True: self.value = False
             else: self.value = True
+
+        return self

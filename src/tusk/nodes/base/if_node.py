@@ -7,116 +7,70 @@ class IfNode(Node):
         from tusk.interpreter import Interpreter
         from tusk.nodes.statement import StatementNode
         self.interpreter = token.interpreter
+        self.token = token
 
-        condition = ConditionNode(token).value
+    async def create(self):
+        from tusk.nodes.expressions import ExpressionNode
+        from tusk.nodes.statement import StatementNode
+        self.condition = await ConditionNode(self.token).create()
         self.interpreter.expect_token("KEYWORD:then")
-        self.statement = {
-            "main": {"condition": condition, "code": None},
-            "else": {"code": None},
-        }
-
 
         self.end_found = False
 
-        self.run_if = condition
+        self.run_if = self.condition.value
         self.run_else = False
 
-        
-        while not self.end_found:
-            nxt_tkn = self.interpreter.next_token()
+        self.interpreter.debug_msg(self.token,self.run_if, self.interpreter.current_token, "If (node) start")
+        self.success = False
+
+        internal_structure_count = 0
+        while self.end_found != True:
+            nxt_tkn = self.interpreter.get_next_token()
+            print(nxt_tkn, internal_structure_count)
             if nxt_tkn.type=="ENDSTRUCTURE":
-                self.end_found = True
+                if internal_structure_count == 0:
+                    self.interpreter.next_token()
+                    self.end_found = True
+                    break
+                else:
+                    internal_structure_count -= 1
+                    self.interpreter.next_token()
             elif nxt_tkn.type=="KEYWORD" and nxt_tkn.value == "elseif":
+                self.interpreter.next_token()
                 if self.run_if == False:
-                    if ConditionNode(self.interpreter.next_token()).value:
+                    self.condition = await ConditionNode(self.interpreter.next_token()).create()
+                    if self.condition.value == True:
+                        self.interpreter.debug_msg(self.token,self.condition.value,self.success, self.interpreter.current_token, "If (node) elseif")
                         self.interpreter.expect_token("KEYWORD:then")
                         self.run_if = True
-                    else: self.run_if = False
+                        self.run_else = False
+                        self.success = True
+                    else: 
+                        self.interpreter.debug_msg(self.token,self.condition.value,self.success, self.interpreter.current_token, "If (node) elseif false")
+                        self.run_if = False
+                        self.run_else = False
+                else:
+                    self.interpreter.debug_msg(self.token,self.condition,self.success, self.interpreter.current_token, "If (node) elseif already run")
+                    self.success = True
+                    self.run_if = False
+                    self.run_else = False
             elif nxt_tkn.type=="KEYWORD" and nxt_tkn.value == "else":
-                if self.run_if == False:
+                self.interpreter.next_token()
+                if self.run_if == False and self.success == False:
                     self.run_else = True
                 else: 
                     self.run_else = False
                     self.run_if = False
+                    self.success = True
             else: 
+                e = self.interpreter.next_token()
+                
                 if self.run_if or self.run_else:
-                    StatementNode(nxt_tkn)
-                    
+                    if nxt_tkn.type == "STRUCTURE":
+                        internal_structure_count += 1
+                    await StatementNode(e).create()
+        self.interpreter.debug_msg(self.token,self.condition.value,self.success, self.interpreter.current_token, "If (node) end")
+        return self
        
 
         
-    """
-        # If starts here
-        self.if_interpreter = Interpreter()
-        self.if_loop("main")
-
-        self.statement_complete = False
-
-
-        
-        if condition:
-            self.if_interpreter.setup(tokens=self.statement["main"]["code"], data=self.interpreter.data).compile()
-            self.statement_complete = True
-        else:
-            for name in self.statement:
-                if self.statement_complete:
-                    break
-                if type(name) == int:
-                    if self.statement[name]["condition"]:
-                        self.if_interpreter.setup(tokens=self.statement[name]["code"], data=self.interpreter.data).compile()
-                        self.statement_complete = True
-        if self.statement_complete != True:
-            if self.statement["else"]["code"] != None:
-                self.if_interpreter.setup(tokens=self.statement["else"]["code"], data=self.interpreter.data).compile()
-                self.statement_complete = True
-
-        self.value = self.statement_complete
-        
-
-    def if_loop(self, append_to_name):
-        token_blocks = []
-        interal_stucture_count = 0
-
-        
-        while self.end_found != True:
-            nxt_tkn = self.interpreter.get_next_token()
-
-            if nxt_tkn.type == "STRUCTURE":
-                interal_stucture_count += 1
-                tkn_to_append = self.interpreter.next_token()
-                tkn_to_append.interpreter = self.if_interpreter
-                token_blocks.append(tkn_to_append)
-            elif nxt_tkn.type == "KEYWORD" and nxt_tkn.value == "end":
-                if interal_stucture_count == 0:
-                    self.interpreter.next_token()
-                    self.end_found = True
-                else:
-                    tkn_to_append = self.interpreter.next_token()
-                    tkn_to_append.interpreter = self.if_interpreter
-                    token_blocks.append(tkn_to_append)
-                    interal_stucture_count -= 1
-            elif nxt_tkn.type == "KEYWORD" and nxt_tkn.value == "elseif":
-                if interal_stucture_count == 0:  # ight then continue with elseif, otherwise the block might be continuing
-                    self.interpreter.next_token()
-                    condition = ExpressionNode(self.interpreter.next_token()).value
-                    self.interpreter.expect_token("KEYWORD:then")
-
-                    self.elseif_count += 1
-                    self.statement[self.elseif_count] = {"condition": condition, "code": None}
-                    self.if_loop(self.elseif_count)
-
-                else:
-                    tkn_to_append = self.interpreter.next_token()
-                    tkn_to_append.interpreter = self.if_interpreter
-                    token_blocks.append(tkn_to_append)
-            elif nxt_tkn.type == "KEYWORD" and nxt_tkn.value == "else":
-                self.interpreter.next_token()
-                self.if_loop("else")
-            else:
-                tkn_to_append = self.interpreter.next_token()
-                tkn_to_append.interpreter = self.if_interpreter
-                token_blocks.append(tkn_to_append)
-        token_blocks.append(Token("ENDSCRIPT", "", self.interpreter))
-
-        self.statement[append_to_name]["code"] = token_blocks
-    """

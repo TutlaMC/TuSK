@@ -1,0 +1,20 @@
+####### FILE SYSTEM ########
+
+write "Is this real?" to "weeb.txt"
+print read "weeb.txt"
+rename "weeb.txt" to "gg.txt"
+print read "gg.txt"
+
+print "Check if you have gg.txt in your system, it'll be deleted in 5 seconds"
+wait 5 seconds
+delete file "gg.txt"
+
+###### PYTHON/TERMINAL EXEC #######
+
+set code to '
+print("hi")' # Multiline string. If you are confused read docs
+
+print shell capture "ls" # This will show all the folders/files in your current folders
+python code # capture mechanic also works with python
+
+# capture is optional for both python and shell if you are using it to run something outside the capabilities of tusk

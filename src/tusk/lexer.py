@@ -9,9 +9,11 @@ KEYWORDS = [
       "characters","items","all",
       "from","of","length","by","till",
       "capture",
-      "get","post","headers","tson",
+      "get","post","headers","json",
       "character","item","number",
-     "file", "variable"
+     "file", "variable", 
+     "channel", "server","member","user","message",
+     "with"
 
 ]
 
@@ -25,7 +27,17 @@ EFFECTS = [
     "request",
     "index",
     "read","write","rename",
-    "delete"
+    "delete",
+    "send"
+]
+
+STRUCTURES = [
+    "if","while","create","function","loop",
+    "on"
+]
+
+EVENT_TYPES = [
+    "message","reaction","voice","join","leave","typing"
 ]
 
 class Lexer:
@@ -136,8 +148,11 @@ class Lexer:
                         elif self.ctoken in ["NUMBER","STRING","BOOL","BOOLEAN","LIST","NOTHING"]:
                             self.tokens.append(Token("TYPE",self.ctoken, self.interpreter))
                             self.ctoken=""
-                        elif self.ctoken in ["if","while","create","function","loop"]:
+                        elif self.ctoken in STRUCTURES:
                             self.tokens.append(Token("STRUCTURE", self.ctoken, self.interpreter))
+                            self.ctoken = ""
+                        elif self.ctoken in EVENT_TYPES:
+                            self.tokens.append(Token("EVENT_TYPE", self.ctoken, self.interpreter))
                             self.ctoken = ""
                         elif self.ctoken in ["+", "-", "*", "/","**", "%"]:
                             self.tokens.append(Token("OPERATOR", self.ctoken, self.interpreter))

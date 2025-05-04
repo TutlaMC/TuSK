@@ -1,0 +1,42 @@
+#### Basic functions ###
+
+function sayHello that
+    print "hello"
+end
+
+sayHello 
+
+# the first block created the function, then the line "sayHello" called it
+
+
+##############################
+
+
+# Functions with parameters
+
+
+function sayHelloTo name that
+    print "Hello, " + name
+end
+
+sayHelloTo "TutlaMC"
+
+
+##############################
+
+# Functions with specific parameters
+
+function addNumbers number1:NUMBER number2:NUMBER that
+    print number1 + number2
+end
+
+addNumbers 5 8
+
+# Another example
+
+function addStringNumbers number1:STRING number2:STRING that
+    print convert number1 to NUMBER + convert number2 to NUMBER
+end
+
+addStringNumbers "5" "7"
+

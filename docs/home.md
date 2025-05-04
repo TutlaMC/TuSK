@@ -1,6 +1,6 @@
-# Welcome to TuSK Docs!
+# Welcome to TuSK Docs! (to be updated)
 
-## Installation
+## Installation 
 Prerequisets:
 - Python 3.9 or 3.9+
 - Python set to path
