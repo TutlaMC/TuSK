@@ -331,6 +331,13 @@ class TuSKSetup(commands.Cog):
     @owner_only()
     async def test(self, ctx: discord.Interaction):
         await ctx.response.send_modal(TestModal(self.bot))
+    
+    @app_commands.command(name="remove_associated_data", description="Remove associated data")
+    @owner_only()
+    async def remove_associated_data(self, ctx: discord.Interaction, script:str):
+        await ctx.response.send_message("Removing associated data...", ephemeral=True)
+        self.bot.remove_script_associations(script)
+        await ctx.followup.send("Associated data removed!", ephemeral=True)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(TuSKSetup(bot))
