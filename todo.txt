@@ -1,6 +1,10 @@
 Add:
 
-- Channel, user, server, message classes
-- ExpressionNode for user, server, message, channel
-- Get: channel, user, server, message
-- Finish On message
+
+- Filemanager for panel
+- Edit/Delete Messages
+- Create/Delete Channels
+- Create/Delete Roles
+- Change channel/role permissions
+
+

@@ -8,6 +8,8 @@ Prerequisets:
 1. Download the ZIP off the [Github](https://github.com/TutlaMC/tusk)
 2. Unzip it to a folder
 3. Run `python -m pip install -r requirements.txt`
+4. Put your token in `token.txt`
+5. [Customizing your bot](https://github.com/TutlaMC/TuSK/blob/main/docs/setup.md)
 
 ## Course Contents
 - Language Core:

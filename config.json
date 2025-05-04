@@ -1,3 +1,28 @@
 {
-    "debug": false
+    "debug": false,
+    "roles":{
+        "owners":[1142511163821801493],
+        "admins":[],
+        "developers":[]
+    },
+    "startup_flags":[
+        
+    ],
+    "status":{
+        "loop":[
+            {
+            "type":"online",
+            "message":"TuSK for life!"
+            },
+            {
+            "type":"online",
+            "message":"Hello, I'm a bot!"
+            },
+            {
+            "type":"online",
+            "message":"The best bots are made in TuSK!"
+            }
+        ]
+    },
+    "version":"0.0.1"
 }

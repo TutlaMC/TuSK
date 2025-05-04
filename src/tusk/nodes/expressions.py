@@ -95,6 +95,9 @@ class FactorNode(Node):
             elif self.value.value == "read":
                 from tusk.nodes.effects.fs import ReadNode
                 self.value = (await ReadNode(self.value).create()).value
+            elif self.value.value == "random":
+                from tusk.nodes.effects.random_ import RandomNode
+                self.value = (await RandomNode(self.value).create()).value
 
             ### DISCORD EFFECTS
             elif self.value.value == "send":

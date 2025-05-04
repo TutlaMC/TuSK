@@ -16,10 +16,9 @@ Wait wait wait... before you click away, see why TuSK is better than its competi
 
 **Coming Features**
 
-- Run code in events (much like in skript, but for Discord!)
 - Modify Channels/Roles/Servers
 - Send messages/embeds
-- Create Commands
+- Create Commands?
 
 # How to use/install
 

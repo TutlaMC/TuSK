@@ -12,6 +12,7 @@ class ReturnNode(Node):
 
     async def create(self):
         self.interpreter.return_value = (await ExpressionNode(self.interpreter.next_token()).create()).value
+        self.interpreter.end_found = True
         return self
 
         

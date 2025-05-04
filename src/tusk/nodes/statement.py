@@ -8,6 +8,7 @@ from tusk.nodes.base.function import *
 from tusk.nodes.base.loops import WhileNode, LoopNode
 from tusk.nodes.del_ import DelNode
 from tusk.nodes.expressions import *
+from tusk.nodes.base.return_node import ReturnNode
 class StatementNode(Node):
     def __init__(self, token:Token):
         self.interpreter = token.interpreter
@@ -16,6 +17,8 @@ class StatementNode(Node):
 
     async def create(self):
         self.interpreter.debug_msg(self.token, "<- stmt (node) token")
+        if self.interpreter.end_found:
+            return False
         if self.token.type in ["KEYWORD", "IDENTIFIER","STRUCTURE","EFFECT","LEFT_CURLY","NUMBER","STRING"]:
             if self.token.type == "EFFECT":
                 if self.token.value == "print":
@@ -61,7 +64,10 @@ class StatementNode(Node):
                 await ExpressionNode(self.token).create()
             elif self.token.type in ["LEFT_CURLY","NUMBER","STRING"]:
                 await ExpressionNode(self.token).create()
+            elif self.token.type == "BREAKSTRUCTURE":
+                await ReturnNode(self.token).create()
             else: self.interpreter.error("UnexpectedToken", f"Expected KEYWORD | VALID_IDENTIFIER | STRUCTURE, got {self.interpreter.current_token.type} @tusk {self.interpreter.current_token.value}{self.token}", notes=["Possible Fix: Recheck code with documentation, you might have missed a keyword at position"])
+
         else: self.interpreter.error("UnexpectedToken", f"Expected KEYWORD | VALID_IDENTIFIER | STRUCTURE, got {self.interpreter.current_token.type} @tusk {self.interpreter.current_token.value}{self.token}", notes=["Possible Fix: Recheck code with documentation, you might have missed a keyword at position"])
 
         self.type="1en"

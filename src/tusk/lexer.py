@@ -13,7 +13,8 @@ KEYWORDS = [
       "character","item","number",
      "file", "variable", 
      "channel", "server","member","user","message",
-     "with"
+     "with",
+     "between"
 
 ]
 
@@ -28,7 +29,8 @@ EFFECTS = [
     "index",
     "read","write","rename",
     "delete",
-    "send"
+    "send",
+    "random"
 ]
 
 STRUCTURES = [

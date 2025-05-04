@@ -10,9 +10,6 @@ def cprint(*args,color="normal",engine="tusk"):
         "end": "\033[0m"
     }
     print(f"{colors[color]}[{engine.upper()}]: {' '.join([str(arg) for arg in args])}{colors['end']}")
-def debug_print(*args,color="blue",engine="debug"):
-    with open("config.json", "r") as f:
-        config = json.load(f)
-
+def debug_print(*args,config,color="blue",engine="debug"):
     if config["debug"]:
         cprint(*args,color=color,engine=engine)

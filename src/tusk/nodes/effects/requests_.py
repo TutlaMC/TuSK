@@ -19,7 +19,7 @@ class Reponse(Variable):
         try:
             self.properties["json"] = response.json()
         except Exception:
-            print("NO JSON")
+            pass
 
         self.value = response.text
         
@@ -63,7 +63,7 @@ class RequestNode(Node):
                     data["headers"]["origin"] = data["headers"]["origin"].replace(" ","")
                 if "user-agent" in data["headers"]:
                     data["headers"]["user-agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36"
-            print(data, "get")
+
             self.value = Reponse(requests.get(self.url, params=data["params"], files=data["files"], cookies=data["cookies"], headers=data["headers"], json=data["json"]))
 
             
@@ -88,7 +88,7 @@ class RequestNode(Node):
                         data["headers"].pop(i)
                 if "user-agent" in data["headers"]:
                     data["headers"]["user-agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36"
-            print(data, "post")
+
             self.value = Reponse(requests.post(self.url,headers=data["headers"], json=data["json"]))
                     
         else: 

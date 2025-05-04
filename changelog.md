@@ -1,8 +1,3 @@
-# What's new?
+# V0.0.1
 
-## ADD
-- Proper type checking when enetring function parameters
-
-
-## FIX
-- Expressions in statement declaration
+Next Update onwards

@@ -64,7 +64,7 @@ class Interpreter:
         while self.pos <= len(self.tokens)-1:
             #self.debug_msg(self.current_token, "<- stmt start")
             if self.current_token.type == "ENDSCRIPT":
-                print("? ENDSCRIPT")
+                self.debug_msg("DEFAULT ENDSCRIPT", "<- stmt end")
                 return self.return_value
             elif self.current_token.type == "NEWLINE":
                 self.next_token()
@@ -75,7 +75,7 @@ class Interpreter:
             else:
                 
                 if self.current_token.type == "ENDSCRIPT": 
-                    debug_print("FAILCHECK ENDSCRIPT")
+                    self.debug_msg("FAILCHECK ENDSCRIPT", "<- stmt end")
                     return self.return_value
                 try:
                     await StatementNode(self.current_token).create()
@@ -84,12 +84,12 @@ class Interpreter:
                     raise e
             self.debug_msg(self.current_token, "<- stmt end")
             if self.get_next_token() == None: 
-                debug_print("MISS ENDSCRIPT")
+                self.debug_msg("MISS ENDSCRIPT", "<- stmt end")
                 break
             else: 
                 e = self.next_token()
                 if e.type == "ENDSCRIPT": 
-                    debug_print("DEFAULT ENDSCRIPT")
+                    self.debug_msg("DEFAULT ENDSCRIPT", "<- stmt end")
                     return self.return_value
 
 
