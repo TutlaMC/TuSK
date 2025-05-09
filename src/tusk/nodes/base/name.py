@@ -1,7 +1,7 @@
 from tusk.token import Token
 from tusk.node import Node
 from tusk.variable import Variable
-
+from tusk.discord_classes import is_tusk_object
 class NameNode(Node):
     def __init__(self, token:Token):
         self.interpreter = token.interpreter
@@ -33,3 +33,11 @@ class NameNode(Node):
         self.interpreter.debug_msg("name", "<- name (node) end")
         return self
         
+
+def setter(name,value,interpreter):
+    location = interpreter.data["vars"]
+    if is_tusk_object(value):
+        location[name] = value
+    else:
+        location[name] = Variable(name,value)
+    return location[name]

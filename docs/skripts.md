@@ -14,6 +14,29 @@ The script panel lets you manage your scripts within Discord! All you have to do
 
 In the menu you will be able to see, add/remove, enable/disable & compile scripts. All you have to do is click buttons!
 
+## Executing Scripts without Discord
+
+**Repeatedly initialzing your bot to test code will get you rate limited.** So it's best to test algorithmic code or code that doesn't use Discord function/effects seperately during development. 
+
+TuSK comes with a feature just for this (or if you want to run TuSK as a language without the Discord Bot features), to use it just run `src/compile.py your_script.tusk`. It comes with some flags:
+
+`--debug`: Enables debug mode, showing token parsing and execution steps
+`--tokens`: Shows the tokens generated from lexical analysis
+`--data`: Lists the compiled data (variables, events and functions)
+`--vars`: Lists the generated variables
+`--funcs`: Lists the generated functions
+`--events`: Lists the generated events
+`--event-executors`: Lists the generated event executors
+`--return`: Shows the returned value
+
+
+Example execution:
+
+```bash
+src/compile.py "scripts/test.tusk" --debug --funcs --vars
+```
+
+
 
 
 

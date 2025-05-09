@@ -12,6 +12,8 @@ from tusk.nodes.statement import StatementNode
 from tusk.nodes.base.function import FunctionNode
 from tusk.nodes.base.return_node import ReturnNode
 
+from tusk.discord_classes import get_exec_names
+
 ### INTERPRETER
 
 class Interpreter:
@@ -25,14 +27,7 @@ class Interpreter:
                 "funcs":{},
                 "local":{},
                 "async_tasks":[],
-                "events":{
-                    "message":[],
-                    "reaction":[],
-                    "voice":[],
-                    "join":[],
-                    "leave":[],
-                    "typing":[]
-                }
+                "events":get_exec_names()
             }
         else:
             self.data = data
@@ -57,12 +52,16 @@ class Interpreter:
         with open('config.json', 'r') as f:
             self.config = json.load(f)
         self.debug = self.config["debug"]
-        self.debug_msg(self.tokens, self.data)
+        self.debug_msg(self.tokens)
         return self
 
     async def compile(self):
+        self.end_found = False
         while self.pos <= len(self.tokens)-1:
             #self.debug_msg(self.current_token, "<- stmt start")
+            if self.end_found:
+                self.debug_msg("RETURN ENDSCRIPT")
+                return self.return_value
             if self.current_token.type == "ENDSCRIPT":
                 self.debug_msg("DEFAULT ENDSCRIPT", "<- stmt end")
                 return self.return_value
@@ -186,14 +185,14 @@ class Interpreter:
         return tokens
     
     def error(self, error_name, error_desc, notes=[]):
-        print("================ ERROR ================")
+        print("\n================ ERROR ================")
         print(f"{error_name}: {error_desc}")
         print("============== POSITION ===============")
         print(self.arrows_at_pos())
         print("================ NOTES ================")
         for i in notes:
             print(i)
-        print("=======================================")
+        print("=======================================\n")
         #exit()
 
     def debug_msg(self, *args,color="blue"):

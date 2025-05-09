@@ -9,6 +9,7 @@ from tusk.nodes.base.loops import WhileNode, LoopNode
 from tusk.nodes.del_ import DelNode
 from tusk.nodes.expressions import *
 from tusk.nodes.base.return_node import ReturnNode
+from tusk.nodes.effect import EffectNode
 class StatementNode(Node):
     def __init__(self, token:Token):
         self.interpreter = token.interpreter
@@ -21,30 +22,7 @@ class StatementNode(Node):
             return False
         if self.token.type in ["KEYWORD", "IDENTIFIER","STRUCTURE","EFFECT","LEFT_CURLY","NUMBER","STRING"]:
             if self.token.type == "EFFECT":
-                if self.token.value == "print":
-                    e = await ExpressionNode(self.interpreter.next_token()).create()
-                    print(e.value)
-                elif self.token.value == "set":
-                    from tusk.nodes.effects.set import SetNode
-                    await SetNode(self.token).create()
-                elif self.token.value == "wait":
-                    try:
-                        time.sleep((await ExpressionNode(self.interpreter.next_token()).create()).value)
-                    except KeyboardInterrupt as e:
-                        self.interpreter.error("KeyboardInterrupt", "User cancelled wait", [f"You pressed Ctrl+C"])
-                elif self.token.value == "delete":
-                    await DelNode(self.token).create()
-                elif self.token.value == "write":
-                    from tusk.nodes.effects.fs import WriteNode
-                    await WriteNode(self.token).create()
-                elif self.token.value == "rename":
-                    from tusk.nodes.effects.fs import RenameNode
-                    await RenameNode(self.token).create()
-                
-
-                
-                else:
-                    await ExpressionNode(self.token).create()
+                await EffectNode(self.token).create()
             elif self.token.type == "STRUCTURE":
                 if self.token.value == "if":
                     await IfNode(self.interpreter.next_token()).create()

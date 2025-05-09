@@ -2,6 +2,8 @@ from tusk.token import Token
 from tusk.node import Node
 from tusk.nodes.expressions import ExpressionNode
 
+from tusk.discord_classes import to_tusk_object, to_discord_object
+
 import discord
 
 class GetNode(Node):
@@ -10,7 +12,7 @@ class GetNode(Node):
         self.token = token
         
     async def create(self):
-        e = self.interpreter.expect_token("KEYWORD:item|KEYWORD:character|KEYWORD:channel|KEYWORD:server|KEYWORD:user|KEYWORD:message|STRING")
+        e = self.interpreter.expect_token("KEYWORD:item|KEYWORD:character|KEYWORD:channel|KEYWORD:server|KEYWORD:user|KEYWORD:message|KEYWORD:role|KEYWORD:emoji|STRING")
         if e.type == "STRING":
             self.interpreter.expect_token("LOGIC:in")
             list_ = (await ExpressionNode(self.interpreter.next_token()).create()).value
@@ -35,7 +37,8 @@ class GetNode(Node):
             else:
                 raise Exception(f"get requires <string> or <list> not {type(list_)}")
             return self
-        elif e.value in ["channel","server","member","user","message"]:
+        elif e.value in ["channel","server","member","user","message","role","emoji"]:
+            bot:discord.Client = self.interpreter.bot
             name = (await ExpressionNode(self.interpreter.next_token()).create()).value
             if e.value == "channel":
                 from tusk.discord_classes import ChannelClass
@@ -55,7 +58,7 @@ class GetNode(Node):
                     self.value = GuildClass(await self.interpreter.bot.fetch_guild(int(name)))
                 elif type(name) == str:
                     for guild in self.interpreter.bot.guilds:
-                        if guild.name == name:
+                        if guild.name.lower() == name.lower():
                             self.value = GuildClass(guild)
                             break
                     else:
@@ -66,7 +69,7 @@ class GetNode(Node):
                         self.value = UserClass(await self.interpreter.bot.fetch_user(int(name)))
                     elif type(name) == str:
                         for user in self.interpreter.bot.users:
-                            if user.name == name:
+                            if user.name.lower() == name.lower():
                                 self.value = UserClass(user)
                                 break
                         else:
@@ -74,7 +77,18 @@ class GetNode(Node):
                 elif e.value == "message":
                     from tusk.discord_classes import MessageClass
                     if type(name) == int:
-                        self.value = MessageClass(await self.interpreter.bot.fetch_message(int(name)))
+                        if self.interpreter.get_next_token().type == "LOGIC" and self.interpreter.get_next_token().value == "in":
+                            self.interpreter.expect_token("KEYWORD:channel")
+                            channel = (await to_discord_object(self.interpreter.bot, (await ExpressionNode(self.interpreter.next_token()).create()).value, "channel"))
+                            self.value = MessageClass(await channel.fetch_message(int(name)))
+                        else:
+                            for channel in self.interpreter.bot.channels:
+                                message = discord.utils.get(channel.messages, content=name)
+                                if message:
+                                    self.value = MessageClass(message)
+                                    break
+                            else:
+                                self.interpreter.error("MessageNotFound", f"Message with id '{name}' not found")
                     elif type(name) == str:
                         for channel in self.interpreter.bot.channels:
                             message = discord.utils.get(channel.messages, content=name)
@@ -83,6 +97,42 @@ class GetNode(Node):
                                 break
                         else:
                             self.interpreter.error("MessageNotFound", f"Message with content '{name}' not found")
+
+                elif e.value == "role":
+                    from tusk.discord_classes import RoleClass
+                    if type(name) == int:
+                    
+                        self.value = RoleClass(await self.interpreter.bot.fetch_role(int(name)))
+                    elif type(name) == str:
+                        self.interpreter.expect_token("LOGIC:in")
+                        server = (await to_discord_object(self.interpreter.bot, (await ExpressionNode(self.interpreter.next_token()).create()).value, "guild"))
+                        for role in server.roles:
+                            if role.name.lower() == name.lower():
+                                self.value = RoleClass(role)
+                                break
+                        else:
+                            self.interpreter.error("RoleNotFound", f"Role with name '{name}' not found")
+                elif e.value == "emoji":
+                    from tusk.discord_classes import EmojiClass
+                    if type(name) == int:
+                        self.interpreter.expect_token("LOGIC:in")
+                        server = (await to_discord_object(self.interpreter.bot, (await ExpressionNode(self.interpreter.next_token()).create()).value, "guild"))
+                        for emoji in server.emojis:
+                            if emoji.id == name:
+                                self.value = EmojiClass(emoji)
+                                break
+                        else:
+                            self.interpreter.error("EmojiNotFound", f"Emoji with id '{str(name)}' not found")
+                    elif type(name) == str:
+                        self.interpreter.expect_token("LOGIC:in")
+                        server = (await to_discord_object(self.interpreter.bot, (await ExpressionNode(self.interpreter.next_token()).create()).value, "guild"))
+                        for emoji in server.emojis:
+                            if emoji.name.lower() == name.lower():
+                                self.value = EmojiClass(emoji)
+                                break
+                        else:
+                            self.interpreter.error("EmojiNotFound", f"Emoji with name '{name}' not found")
+                            
 
             else:
                 raise Exception(f"get requires <int> or <str> not {type(name)}")

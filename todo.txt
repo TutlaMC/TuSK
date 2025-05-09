@@ -1,11 +1,9 @@
 Add:
 
-- Function for convert token/int to discord classes and back
+- Discord Node?
 - Debug the panels
 - Filemanager for panel
-- Edit/Delete Messages
-- Create/Delete Channels
-- Create/Delete Roles
 - Change channel/role permissions
-
+- Optional brackets
+- make to_discord_object a node
 

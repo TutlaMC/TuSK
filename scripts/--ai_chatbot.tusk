@@ -11,5 +11,4 @@ on message
                         "stream": false,
                     }
         send response's text to event_channel
-
 end

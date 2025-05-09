@@ -11,10 +11,11 @@ KEYWORDS = [
       "capture",
       "get","post","headers","json",
       "character","item","number",
-     "file", "variable", 
-     "channel", "server","member","user","message",
-     "with",
-     "between"
+      "file", "variable", 
+      "channel", "server","member","user","message", "category", "emoji", "reaction",
+      "channels", "servers", "members", "users", "messages", "categories", "emojis", "reactions",
+      "with","between",
+      "named","color"
 
 ]
 
@@ -29,8 +30,12 @@ EFFECTS = [
     "index",
     "read","write","rename",
     "delete",
-    "send",
-    "random"
+    "random",
+    "import",
+    
+    # Discord
+    "send","edit",
+    "create"
 ]
 
 STRUCTURES = [
@@ -39,8 +44,18 @@ STRUCTURES = [
 ]
 
 EVENT_TYPES = [
-    "message","reaction","voice","join","leave","typing"
+    "message","reaction","voice","join","leave","typing", "ready"
 ]
+
+COLORS = {
+    "red":"#ff0000",
+    "green":"#00ff00",
+    "blue":"#0000ff",
+    "yellow":"#ffff00",
+    "purple":"#ff00ff",
+    "orange":"#ffa500",
+    "brown":"#a52a2a"
+}
 
 class Lexer:
     def __init__(self,text, interpreter):
@@ -74,11 +89,10 @@ class Lexer:
         
 
         for j in text: 
-            
-
             if in_string:
                 if j == start_quote_type:
                     in_string = False
+                    self.ctoken = self.ctoken.replace("\\n","\n")
                     self.tokens.append(Token("STRING", self.ctoken, self.interpreter))
                     self.ctoken = ""
                 else:
@@ -93,7 +107,6 @@ class Lexer:
                     self.ctoken = ""
                 else: pass
             else:
-                
                 if j in "(){}[],;:":
                     token_type = {
                         "(": "LEFT_PAR",
@@ -111,20 +124,18 @@ class Lexer:
                     self.tokens.append(Token(token_type, j, self.interpreter))
                     self.ctoken = ""
                 elif j == "#":
-                    in_comment = True
-                    self.ctoken = ""
+                    if not (len(text) > reader_pos+6 and all(c.lower() in "0123456789abcdef" for c in text[reader_pos+1:reader_pos+7])):
+                        in_comment = True
+                        self.ctoken = ""
                 elif j in ["'", '"']:
                     in_string = True
                     start_quote_type = j
                     self.ctoken = ""
                 elif j in " \t\n" or reader_pos == len(text)-1:
-                    if reader_pos == len(text)-1: self.ctoken += j
-                    """
-                    if j in "\n":
-                        self.tokens.append(Token("NEWLINE", j, self.interpreter))
-                        self.ctoken = ""
-                    """
-                    self.ctoken = self.ctoken.replace(" ","")
+                    if reader_pos == len(text)-1 and j not in " \t\n": 
+                        self.ctoken += j
+                    
+                    self.ctoken = self.ctoken.replace(" ","").replace("\n","").replace("\t","")
                     if self.ctoken != "":
                         if self.ctoken.isnumeric():
                             self.tokens.append(Token("NUMBER", self.ctoken, self.interpreter))
@@ -159,6 +170,15 @@ class Lexer:
                         elif self.ctoken in ["+", "-", "*", "/","**", "%"]:
                             self.tokens.append(Token("OPERATOR", self.ctoken, self.interpreter))
                             self.ctoken = ""
+                        elif self.ctoken in COLORS or self.ctoken.startswith("#"):
+                            if self.ctoken.startswith("#"):
+                                if len(self.ctoken) != 7: self.interpreter.error("InvalidColor",f"{self.ctoken} is not a color (or valid hexcode)")
+                                self.tokens.append(Token("COLOR", self.ctoken, self.interpreter))
+                                self.ctoken = ""
+                            else:
+                                if self.ctoken not in COLORS: self.interpreter.error("InvalidColor",f"{self.ctoken} is not a color")
+                                self.tokens.append(Token("COLOR", COLORS[self.ctoken], self.interpreter))
+                                self.ctoken = ""
                         elif self.ctoken in ["miliseconds","seconds","minutes","hours","days","weeks","months","years","milisecond","second","minute","hour","day","week","month","year"]:
                             if self.ctoken.endswith("s"):
                                 self.ctoken = self.ctoken[:-1]
@@ -167,42 +187,17 @@ class Lexer:
                         elif self.ctoken == "end":
                             self.tokens.append(Token("ENDSTRUCTURE",self.ctoken,self.interpreter))
                             self.ctoken = ""
-                        elif self.ctoken in ["return"]:
+                        elif self.ctoken in ["return","break"]:
                             self.tokens.append(Token("BREAKSTRUCTURE",self.ctoken,self.interpreter))
                             self.ctoken=""
                         else:
                             if not self.ctoken in " \t\n": 
-
                                 self.tokens.append(Token("IDENTIFIER", self.ctoken, self.interpreter))
                                 self.ctoken = ""
-                        
-                        
-                    
-
-                    
-                    
-                    """
-                    if j in "   ":
-                        self.tokens.append(Token("TAB", self.ctoken, self.interpreter))
-                        self.ctoken = ""                   
-                    elif self.ctoken == " ":
-                        self.tokens.append(Token("WHITESPACE", self.ctoken, self.interpreter))
-                        self.ctoken = ""
-                    """
                 else:
                     self.ctoken += j
 
-            reader_pos+= 1
-
-
-                    
-            '''
-            elif self.ctoken in " \t\n":
-                self.tokens.append(Token("WHITESPACE", self.ctoken))
-            '''
+            reader_pos += 1
 
         self.tokens.append(Token("ENDSCRIPT", "", self.interpreter))
-
-
-        #print(self.tokens, '<- tokens')
         return self.tokens

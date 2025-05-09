@@ -1,7 +1,8 @@
 from tusk.node import Node
 from tusk.token import Token
 from tusk.nodes.condition import *
-
+from tusk.discord_classes import to_discord_object, to_tusk_object
+import discord 
 class WhileNode(Node):
     def __init__(self, token: Token):
         from tusk.interpreter import Interpreter
@@ -64,7 +65,7 @@ class LoopNode(Node):
             e = await self.set_as(token=self.interpreter.get_next_token())
             await self.loop()
         elif self.token.type=="KEYWORD" and self.token.value == "all":
-            loop_target_type = self.interpreter.expect_token("KEYWORD:items|KEYWORD:characters").value
+            loop_target_type = self.interpreter.expect_token("KEYWORD:items|KEYWORD:characters|KEYWORD:channels|KEYWORD:servers|KEYWORD:members|KEYWORD:users|KEYWORD:messages|KEYWORD:categories|KEYWORD:emojis").value
             self.interpreter.expect_token("LOGIC:in")
             if loop_target_type == "characters":
                 self.times = str((await ExpressionNode(self.interpreter.next_token()).create()).value)
@@ -74,12 +75,45 @@ class LoopNode(Node):
                 self.times = (await ExpressionNode(self.interpreter.next_token()).create()).value
                 e = await self.set_as(token=self.interpreter.get_next_token())
                 await self.loop()
-        
-        else:
-            raise Exception(f"loop expected token KEYWORD | NUMBER got {self.token.type}")
+            elif loop_target_type == "channels":
+                self.times = (await ExpressionNode(self.interpreter.next_token()).create()).value
+                self.times:discord.Guild = await to_discord_object(self.interpreter.bot, self.times, "guild")
+                channels = await self.times.fetch_channels()
+                self.times = await to_tusk_object(self.interpreter.bot, channels, "channel", references=[self.times])
+                e = await self.set_as(token=self.interpreter.get_next_token(),fallback="loop_channel")
+                await self.loop()
+            elif loop_target_type == "servers":
+                self.times = (await ExpressionNode(self.interpreter.next_token()).create()).value
+                servers = await self.interpreter.bot.fetch_guilds()
+                self.times = await to_tusk_object(self.interpreter.bot, servers, "server", references=[self.times])
+                e = await self.set_as(token=self.interpreter.get_next_token(),fallback="loop_server")
+                await self.loop()
+            elif loop_target_type in ["members","users"]:
+                self.times = (await ExpressionNode(self.interpreter.next_token()).create()).value
+                self.times:discord.Guild = await to_discord_object(self.interpreter.bot, self.times, "guild")
+                members = await self.times.fetch_members()
+                self.times = await to_tusk_object(self.interpreter.bot, members, "user", references=[self.times])
+                e = await self.set_as(token=self.interpreter.get_next_token(),fallback="loop_member")
+                await self.loop()
+            elif loop_target_type == "categories":
+                self.times = (await ExpressionNode(self.interpreter.next_token()).create()).value
+                self.times:discord.Guild = await to_discord_object(self.interpreter.bot, self.times, "guild")
+                categories = await self.times.categories
+                self.times = await to_tusk_object(self.interpreter.bot, categories, "category", references=[self.times])
+                e = await self.set_as(token=self.interpreter.get_next_token(),fallback="loop_category")
+                await self.loop()
+            elif loop_target_type == "emojis":
+                self.times = (await ExpressionNode(self.interpreter.next_token()).create()).value
+                self.times:discord.Guild = await to_discord_object(self.interpreter.bot, self.times, "guild")
+                emojis = await self.times.fetch_emojis()
+                self.times = await to_tusk_object(self.interpreter.bot, emojis, "emoji", references=[self.times])
+                e = await self.set_as(token=self.interpreter.get_next_token(),fallback="loop_emoji")
+                await self.loop()
+            else:
+                raise Exception(f"loop expected token KEYWORD | NUMBER got {self.token.type}")
         return self
 
-    async def set_as(self, token:Token=None,value=None):
+    async def set_as(self, token:Token=None,value=None,fallback="loop_item"):
         if value != None:
             self.interpreter.data["vars"][self.as_] = value
         else:
@@ -90,17 +124,18 @@ class LoopNode(Node):
                     self.as_ = var.value
                     self.interpreter.data["vars"][str(var.value)] = None
             else:
-                self.as_ = "loop_item"
+                self.as_ = fallback
                 self.interpreter.data["vars"][self.as_] = None
         return self
 
     async def loop(self):
         from tusk.nodes.statement import StatementNode
         from tusk.variable import Variable
+        from tusk.nodes.base.name import setter
         pos = self.interpreter.pos
+        run = True
         for i in self.times: 
-            await self.set_as(value=Variable(self.as_,i))
-
+            setter(self.as_,i,self.interpreter)
             end_block = False
             self.interpreter.pos = pos
             while end_block == False:
@@ -108,8 +143,12 @@ class LoopNode(Node):
                 if nxt_tkn.type == "ENDSTRUCTURE":
                     end_block =True
                     break
+                elif nxt_tkn.type == "BREAKSTRUCTURE" and nxt_tkn.value == "break":
+                    run = False
+                    break
                 else:
-                    await StatementNode(nxt_tkn).create()
+                    if run == True:
+                        await StatementNode(nxt_tkn).create()
                 
             
         

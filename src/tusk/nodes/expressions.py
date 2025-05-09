@@ -59,50 +59,8 @@ class FactorNode(Node):
                 self.value = (await GetNode(self.value).create()).value
                         
         elif self.value.type == "EFFECT":
-            if self.value.value == "input":
-                from tusk.nodes.effects.input_ import InputNode
-                self.value = (await InputNode(self.value).create()).value
-            elif self.value.value == "convert":
-                from tusk.nodes.effects.types_ import ConvertNode
-                self.value = (await ConvertNode(self.value).create()).value
-            elif self.value.value == "add":
-                from tusk.nodes.effects.string_list_common import AddNode
-                self.value = (await AddNode(self.value).create()).value
-            elif self.value.value == "remove":
-                from tusk.nodes.effects.string_list_common import RemoveNode
-                self.value = (await RemoveNode(self.value).create()).value
-            elif self.value.value == "replace":
-                from tusk.nodes.effects.string_list_common import ReplaceNode
-                self.value = (await ReplaceNode(self.value).create()).value
-            elif self.value.value == "length":
-                from tusk.nodes.effects.string_list_common import LengthNode
-                self.value = (await LengthNode(self.value).create()).value
-            elif self.value.value == "split":
-                from tusk.nodes.effects.string_list_common import SplitNode
-                self.value = (await SplitNode(self.value).create()).value
-            elif self.value.value == "index":
-                from tusk.nodes.effects.string_list_common import IndexNode
-                self.value = (await IndexNode(self.value).create()).value
-            elif self.value.value == "shell":
-                from tusk.nodes.effects.exec_ import ShellNode
-                self.value = (await ShellNode(self.value).create()).value
-            elif self.value.value == "python":
-                from tusk.nodes.effects.exec_ import PythonNode
-                self.value = (await PythonNode(self.value).create()).value
-            elif self.value.value == "request":
-                from tusk.nodes.effects.requests_ import RequestNode
-                self.value = (await RequestNode(self.value).create()).value
-            elif self.value.value == "read":
-                from tusk.nodes.effects.fs import ReadNode
-                self.value = (await ReadNode(self.value).create()).value
-            elif self.value.value == "random":
-                from tusk.nodes.effects.random_ import RandomNode
-                self.value = (await RandomNode(self.value).create()).value
-
-            ### DISCORD EFFECTS
-            elif self.value.value == "send":
-                from tusk.nodes.discord.effects.send import SendNode
-                self.value = (await SendNode(self.value).create()).value
+            from tusk.nodes.effect import EffectNode
+            self.value = (await EffectNode(self.value).create()).value 
                 
                 
         elif self.value.type == "IDENTIFIER":

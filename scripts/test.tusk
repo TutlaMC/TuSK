@@ -1,0 +1,7 @@
+on message
+    set x to create role named "tizzlerds" with color #456fff
+    send x's usage to event_channel
+end
+on ready 
+    print "Bot is ready!"
+end

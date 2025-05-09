@@ -119,15 +119,19 @@ class ScriptView(discord.ui.View):
 
 
 class TestModal(discord.ui.Modal):
-    def __init__(self):
+    def __init__(self, bot):
+        self.bot = bot
         super().__init__(title="Test Script")
         self.add_item(discord.ui.TextInput(label="Script", style=discord.TextStyle.paragraph, placeholder="print('Hello world!')"))
 
     async def on_submit(self, interaction: discord.Interaction):
         script = self.children[0].value
         await interaction.response.send_message(f"Compiling Script: {script}", ephemeral=True)
-        await self.bot.compile_script(script, temporary=True)
-        await interaction.followup.send("Script compiled!", ephemeral=True)
+        try:
+            await self.bot.compile_script(script, temporary=True)
+            await interaction.followup.send("Script compiled!", ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"Error compiling script: ```python\n{str(e)}```", ephemeral=True)
 
 
 

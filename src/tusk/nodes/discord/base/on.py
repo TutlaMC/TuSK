@@ -1,6 +1,9 @@
 from tusk.node import Node
 from tusk.token import Token
 
+from tusk.discord_classes import get_exec_names
+
+
 class OnNode(Node):
     def __init__(self, token: Token):
         self.interpreter = token.interpreter
@@ -9,10 +12,46 @@ class OnNode(Node):
     async def create(self):
         from tusk.interpreter import Interpreter
         event_type = self.interpreter.next_token()
-        if event_type.type in ["EVENT_TYPE","KEYWORD"]:
-            if event_type.type == "KEYWORD":
-                if not event_type.value in ["message","reaction","voice","join","leave","typing"]:
+        if event_type.type in ["EVENT_TYPE","KEYWORD","EFFECT"]:
+            if event_type.value == "delete":
+                event_type_ = "_delete"
+                e = self.interpreter.next_token()
+                if e.type == "KEYWORD" and e.value == "message":
+                    event_type_ = "message"+event_type_
+                elif e.type == "KEYWORD" and e.value == "channel":
+                    event_type_ = "channel"+event_type_
+                elif e.type == "KEYWORD" and e.value == "role":
+                    event_type_ = "role"+event_type_
+                elif e.type == "KEYWORD" and e.value == "emoji":
+                    event_type_ = "emoji"+event_type_
+                else:
                     self.interpreter.error("InvalidEvent", f"Invalid event type: {event_type.type}")
+            elif event_type.value == "remove":
+                self.interpreter.expect_token("KEYWORD:reaction")
+                event_type_ = "reaction_remove"
+            elif event_type.value == "edit":
+                self.interpreter.expect_token("KEYWORD:message")
+                event_type_ = "message_edit"
+            elif event_type.value == "create":
+                e = self.interpreter.next_token()
+                if e.type == "KEYWORD" and e.value == "channel":
+                    event_type_ = "channel_create"
+                elif e.type == "KEYWORD" and e.value == "role":
+                    event_type_ = "role_create"
+                elif e.type == "KEYWORD" and e.value == "emoji":
+                    event_type_ = "emoji_create"
+                else:
+                    self.interpreter.error("InvalidEvent", f"Invalid event type: {event_type.type}")
+            else: 
+                event_type_ = event_type.value
+                
+
+            
+
+            if not event_type_ in get_exec_names():
+
+                self.interpreter.error("InvalidEvent", f"Invalid event type: {event_type_}")
+            
 
 
 
@@ -42,7 +81,8 @@ class OnNode(Node):
                     self.tokens.append(tkn_to_append)
             self.tokens.append(Token("ENDSCRIPT", "", self.interpreter))
 
-            self.interpreter.data["events"][event_type.value].append([self.tokens,self.interpreter])
+            self.interpreter.data["events"][event_type_].append({"tokens":self.tokens,"interpreter":self.interpreter}) # itll look like "message": [[...],<Interpreter>]]
+
         else:
             self.interpreter.error("InvalidEvent", f"Invalid event type: {event_type.type}")
         

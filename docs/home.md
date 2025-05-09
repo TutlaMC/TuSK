@@ -10,6 +10,7 @@ Prerequisets:
 3. Run `python -m pip install -r requirements.txt`
 4. Put your token in `token.txt`
 5. [Customizing your bot](https://github.com/TutlaMC/TuSK/blob/main/docs/setup.md)
+6. [Start Skripting](https://github.com/TutlaMC/TuSK/blob/main/docs/skripts.md)
 
 ## Course Contents
 - Language Core:
@@ -19,3 +20,6 @@ Prerequisets:
   - [Functions](https://github.com/TutlaMC/TuSK/blob/main/docs/course/functions.md)
 - Discord:
   - To be added
+
+**Are you a developer who wants to add more?**
+[Read This](https://github.com/TutlaMC/TuSK/blob/main/docs/modding.md)
