@@ -39,8 +39,8 @@ class Client(commands.Bot):
     async def on_ready(self):
         self.load_scripts()
         await self.compile_all_scripts()
-        status = random.choice(self.config["status"]["loop"])
-        await self.change_presence(activity=discord.Activity(type=status["type"], name=status["message"]))
+        #status = random.choice(self.config["status"]["loop"])
+        #await self.change_presence(activity=discord.Activity(type=status["type"], name=status["message"]))
 
         async def srd(data):
             return data
@@ -80,6 +80,8 @@ class Client(commands.Bot):
                     for exe in TuskInterpreter.data["events"][event].copy():
                         self.event_executors[event].append(exe)
 
+            print(self.event_executors)
+
             
 
     def remove_script_associations(self,script:str):
@@ -104,7 +106,7 @@ class Client(commands.Bot):
     
 
     ########### EVENTS ###########
-    async def on_message(self,message:discord.Message): 
+    async def on_message(self,message): 
         debug_print("Executing message event",config=self.config)
         async def srd(data):
             data["vars"]["event_message"] = MessageClass(message)
@@ -141,7 +143,8 @@ class Client(commands.Bot):
 
 
 
-    async def on_reaction_add(self,reaction:discord.Reaction,user:discord.User):
+    async def on_reaction_add(self,reaction,user):
+        print("Reaction added")
         async def srd(data):
             data["vars"]["event_reaction"] = ReactionClass(reaction)
             data["vars"]["event_user"] = UserClass(user)
@@ -149,7 +152,7 @@ class Client(commands.Bot):
             return data
         await self.event_executor("reaction",srd)
 
-    async def on_reaction_remove(self,reaction:discord.Reaction,user:discord.User):
+    async def on_reaction_remove(self,reaction,user):
         async def srd(data):
             data["vars"]["event_reaction"] = ReactionClass(reaction)
             data["vars"]["event_user"] = UserClass(user)

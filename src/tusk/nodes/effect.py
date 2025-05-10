@@ -1,5 +1,5 @@
 import time
-
+import asyncio
 
 from tusk.node import Node
 from tusk.token import Token
@@ -20,10 +20,13 @@ class EffectNode(Node):
             from tusk.nodes.effects.set import SetNode
             await SetNode(self.token).create()
         elif self.token.value == "wait":
-            try:
-                time.sleep((await ExpressionNode(self.interpreter.next_token()).create()).value)
-            except KeyboardInterrupt as e:
-                self.interpreter.error("KeyboardInterrupt", "User cancelled wait", [f"You pressed Ctrl+C"])
+            if self.interpreter.get_next_token().value != "for":
+                try:
+                    time.sleep((await ExpressionNode(self.interpreter.next_token()).create()).value)
+                except KeyboardInterrupt as e:
+                    self.interpreter.error("KeyboardInterrupt", "User cancelled wait", [f"You pressed Ctrl+C"])
+            else:
+                await asyncio.sleep((await ExpressionNode(self.interpreter.next_token()).create()).value)
         elif self.token.value == "delete":
             await DelNode(self.token).create()
         elif self.token.value == "write":

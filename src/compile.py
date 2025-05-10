@@ -4,7 +4,7 @@ import discord
 import sys
 import asyncio
 from tusk.interpreter import Interpreter
-from tusk.discord_classes import get_exec_names
+from tusk.discord_classes import *
 import json
 file = sys.argv[1]
 
@@ -18,8 +18,8 @@ class Client(discord.Client):
         with open("config.json", "r") as f:
             self.config = json.load(f)
         self.startup_Flags = self.config["startup_flags"]
-
-interpreter.setup(file=file,bot=Client())
+bot=Client()
+interpreter.setup(file=file,bot=bot)
 if "--debug" in sys.argv:
     interpreter.debug = True
 if "--tokens" in sys.argv:
@@ -27,6 +27,11 @@ if "--tokens" in sys.argv:
 
 
 asyncio.run(interpreter.compile())
+event_executors = get_exec_names()
+for event in interpreter.data["events"]:
+    if interpreter.data["events"][event] != []:
+        for exe in interpreter.data["events"][event].copy():
+            event_executors[event].append(exe)
 if "--data" in sys.argv:
     print(interpreter.data)
 if "--vars" in sys.argv:
@@ -36,12 +41,37 @@ if "--funcs" in sys.argv:
 if "--events" in sys.argv:
     print(interpreter.data["events"],"\n")
 if "--event-executors" in sys.argv:
-    event_executors = get_exec_names()
-    for event in interpreter.data["events"]:
-        if interpreter.data["events"][event] != []:
-            for exe in interpreter.data["events"][event].copy():
-                event_executors[event].append(exe)
     print(event_executors)
 if "--return" in sys.argv:
     print(interpreter.return_value)
+
+if "--exec-event" in sys.argv:
+    event = sys.argv[sys.argv.index("--exec-event")+1]
+    if event in event_executors:
+        for exe in event_executors[event]:
+            if exe != []:
+                event_interpreter = Interpreter()
+                data = exe["interpreter"].data
+                ### Test data
+                guild = discord.Guild
+                channel = discord.TextChannel
+                message = discord.Message
+                reaction = discord.Reaction
+                user = discord.User
+                if event == "reaction":
+                    data["vars"]["event_reaction"] = ReactionClass(reaction)
+                    data["vars"]["event_user"] = UserClass(user)
+                    print(data["vars"]["event_reaction"])
+                elif event == "message":
+                    data["vars"]["event_message"] = MessageClass(message)
+                elif event == "message_delete":
+                    data["vars"]["event_message"] = MessageClass(message)
+                elif event == "message_edit":
+                    data["vars"]["event_message"] = MessageClass(message)
+                elif event == "reaction_remove":
+                    data["vars"]["event_reaction"] = ReactionClass(reaction)
+                    data["vars"]["event_user"] = UserClass(user)
+                event_interpreter.setup(data=data,tokens=exe["tokens"],bot=bot)
+                asyncio.run(event_interpreter.compile())
+                print(event_interpreter.return_value)
 print("==========================================================\n")

@@ -1,6 +1,7 @@
 from tusk.variable import Variable
 import discord
 
+from tusk.lexer import PermissionNames
 
 def get_exec_names():
     return {
@@ -41,31 +42,43 @@ async def to_discord_object(bot:discord.Client, obj, to_type, references=[]):
                 tobj = await tobj.fetch_message(obj)
             elif type(obj) == MessageClass:
                 tobj = obj.properties["python"]
+            elif type(obj) == discord.Message:
+                tobj = obj
         elif to_type == "channel":
             if type(obj) == int:
                 tobj = await bot.fetch_channel(obj)
             elif type(obj) == ChannelClass:
                 tobj = obj.properties["python"]
+            elif type(obj) in [discord.TextChannel, discord.abc.GuildChannel, discord.abc.PrivateChannel, discord.VoiceChannel, discord.StageChannel, discord.CategoryChannel, discord.Thread]:
+                tobj = obj
         elif to_type == "user":
             if type(obj) == int:
                 tobj = await bot.fetch_user(obj)
             elif type(obj) == UserClass:
                 tobj = obj.properties["python"]
+            elif type(obj) in [discord.Member, discord.User]:
+                tobj = obj
         elif to_type == "guild":
             if type(obj) == int:
                 tobj = await bot.fetch_guild(obj)
             elif type(obj) == GuildClass:
                 tobj = obj.properties["python"]
+            elif type(obj) in [discord.Guild]:
+                tobj = obj
         elif to_type == "role":
             if type(obj) == int:
                 tobj = await bot.fetch_role(obj)
             elif type(obj) == RoleClass:
                 tobj = obj.properties["python"]
+            elif type(obj) in [discord.Role]:
+                tobj = obj
         elif to_type == "emoji":
             if type(obj) == int:
                 tobj = await bot.fetch_emoji(obj)
             elif type(obj) == EmojiClass:
                 tobj = obj.properties["python"]
+            elif type(obj) in [discord.Emoji]:
+                tobj = obj
         else:
             raise Exception(f"you fucked up lmao {obj}")
         dobjl.append(tobj)
@@ -175,7 +188,7 @@ class MessageClass(Variable):
         self.properties["python"] = message
         
 class UserClass(Variable):
-    def __init__(self, user:discord.User):
+    def __init__(self, user:discord.User|discord.Member):
         self.name = user
         self.value = user.name
         self.properties = {}
@@ -185,11 +198,13 @@ class UserClass(Variable):
         self.properties["discriminator"] = user.discriminator
         self.properties["bot"] = user.bot
         self.properties["created_at"] = str(user.created_at)
-        self.properties["joined_at"] = str(user.joined_at)
+        if hasattr(user, "joined_at"):
+            self.properties["joined_at"] = str(user.joined_at)
+        if hasattr(user, "status"):
+            self.properties["online"] = user.status == discord.Status.online
         self.properties["color"] = user.color
         self.properties["banner"] = user.banner
         self.properties["mention"] = user.mention
-        self.properties["online"] = user.status == discord.Status.online
         self.properties["usage"] = f"<@{self.properties['id']}>"
         if hasattr(user, "roles"):
             self.properties["roles"] = [RoleClass(role) for role in user.roles]
@@ -209,7 +224,7 @@ class GuildClass(Variable):
         self.properties["afk_channel"] = guild.afk_channel
         if fast == False:
             self.properties["roles"] = [RoleClass(role) for role in guild.roles]
-            self.properties["emojis"] = [EmojiClass(emoji) for emoji in guild.emojis]
+            self.properties["emojis"] = [EmojiClass(emoji,list_parent=False) for emoji in guild.emojis]
         else:
             self.properties["roles"] = guild.roles
             self.properties["emojis"] = guild.emojis
@@ -278,7 +293,7 @@ class CategoryClass(Variable):
 class EmojiClass(Variable):
     def __init__(self, emoji:discord.Emoji, is_str=False,other=None, list_parent=True):
         self.name = emoji
-        self.value = emoji.name
+        self.value = emoji
         self.properties = {}
         if is_str:
             self.properties["name"] = emoji
@@ -312,13 +327,13 @@ class EmojiClass(Variable):
         self.properties["python"] = emoji
 
 class ReactionClass(Variable):
-    def __init__(self, reaction:discord.Reaction):
+    def __init__(self, reaction):
         self.name = reaction
         self.value = reaction.emoji
         self.properties = {}
         if type(reaction.emoji) == discord.Emoji:
             self.properties["emoji"] = EmojiClass(reaction.emoji)
-        elif type(reaction.emoji) == str:
+        else:
             self.properties["emoji"] = EmojiClass(reaction.emoji, is_str=True, other=reaction.message.channel)
         self.properties["python"] = reaction
 

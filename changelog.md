@@ -1,36 +1,10 @@
-# V0.0.2-NT
+# V0.0.2
 
 **NT STANDS FOR NOT TESTED: THIS VERSION IS NOT TESTED SO YOU MAY RUN INTO ERRORS, REPORT THEM ON THE DISCORD**
 
-ADDED:
-- Importing (I want to see people build libraries out of this!) `import "file_name_here"`
-- Non-Bot-Initalized Compiler (totest tusk code or run tusk seperate): `compile.py`
-- Updated "modidng" in docs
+ADD:
+- Uses `asyncio` for waiting instead of `time`, thought you can still use time  with `wait for`
 
-
-NEW EFFECTS:
-- `edit`
-- `delete message|channel|category`
-- `loop all channels|servers|categories|emojis|members/users in <server>|<channel>|<message>`
-- `create channel|role`
-
-
-NEW EVENTS:
-- `delete message|channel|role|emoji`
-
-- `create channel`
-
-- `edit message`
-
-- `reaction`
-- `remove reaction`
-
-- `join`
-- `leave`
-
-
-
-
-BACKEND:
-- Reorganised effects by making it a single node instead of splitting the effect checks between the ExpressionNode and StatementNode
-- Events are now given as dicts not lists
+FIXED:
+- Recursion issue ( fixed it a few hours ago so I forgot what exactly caused it, but I expect it to be a common issue).
+- `event_reaction's emoji`, `event_channel's server` all breaking because NameNode expected it as token

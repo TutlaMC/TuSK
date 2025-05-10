@@ -1,0 +1,11 @@
+# Russian Roulette but for Discord channels
+
+on message
+    if message is "discord roulette"
+        set num to random number between 1 and 6
+        if num is 6
+            delete channel event_channel
+        end
+    end
+end
+    

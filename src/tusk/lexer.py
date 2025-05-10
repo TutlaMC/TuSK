@@ -1,4 +1,64 @@
 from tusk.token import Token
+import discord
+
+PermissionNames = {
+    # Admin based
+    "administrator": discord.Permissions.administrator,
+    "ban_members": discord.Permissions.ban_members,
+    "kick_members": discord.Permissions.kick_members,
+    "deafen_members": discord.Permissions.deafen_members,
+    "move_members": discord.Permissions.move_members,
+    "mute_members": discord.Permissions.mute_members,
+    "priority_speaker": discord.Permissions.priority_speaker,
+    "manage_channels": discord.Permissions.manage_channels,
+    "manage_emojis": discord.Permissions.manage_emojis,
+    "manage_emojis_and_stickers": discord.Permissions.manage_emojis_and_stickers,
+    "manage_events": discord.Permissions.manage_events,
+    "manage_expressions": discord.Permissions.manage_expressions,
+    "manage_guild": discord.Permissions.manage_guild,
+    "manage_messages": discord.Permissions.manage_messages,
+    "manage_nicknames": discord.Permissions.manage_nicknames,
+    "manage_permissions": discord.Permissions.manage_permissions,
+    "manage_roles": discord.Permissions.manage_roles,
+    "manage_threads": discord.Permissions.manage_threads,
+    "manage_webhooks": discord.Permissions.manage_webhooks,
+    "moderate_members": discord.Permissions.moderate_members,
+    "view_audit_log": discord.Permissions.view_audit_log,
+    "view_guild_insights": discord.Permissions.view_guild_insights,
+    "mention_everyone": discord.Permissions.mention_everyone,
+
+    # Creation
+    "create_expressions": discord.Permissions.create_expressions,
+    "create_instant_invite": discord.Permissions.create_instant_invite,
+    "create_private_threads": discord.Permissions.create_private_threads,
+    "create_public_threads": discord.Permissions.create_public_threads,
+
+    # Generic
+    "read_message_history": discord.Permissions.read_message_history,
+    "read_messages": discord.Permissions.read_messages,
+    "send_messages": discord.Permissions.send_messages,
+    "send_messages_in_threads": discord.Permissions.send_messages_in_threads,
+    "send_tts_messages": discord.Permissions.send_tts_messages,
+    "send_voice_messages": discord.Permissions.send_voice_messages,
+    "embed_links": discord.Permissions.embed_links,
+    "attach_files": discord.Permissions.attach_files,
+    "change_nickname": discord.Permissions.change_nickname,
+    "connect": discord.Permissions.connect,
+    "add_reactions": discord.Permissions.add_reactions,
+    "external_emojis": discord.Permissions.external_emojis,
+    "external_stickers": discord.Permissions.external_stickers,
+    "request_to_speak": discord.Permissions.request_to_speak,
+    "speak": discord.Permissions.speak,
+    "stream": discord.Permissions.stream,
+    "use_application_commands": discord.Permissions.use_application_commands,
+    "use_embedded_activities": discord.Permissions.use_embedded_activities,
+    "use_external_emojis": discord.Permissions.use_external_emojis,
+    "use_external_sounds": discord.Permissions.use_external_sounds,
+    "use_external_stickers": discord.Permissions.use_external_stickers,
+    "use_soundboard": discord.Permissions.use_soundboard,
+    "use_voice_activation": discord.Permissions.use_voice_activation,
+    "view_channel": discord.Permissions.view_channel,
+}
 
 KEYWORDS = [
       "to",
@@ -15,7 +75,11 @@ KEYWORDS = [
       "channel", "server","member","user","message", "category", "emoji", "reaction",
       "channels", "servers", "members", "users", "messages", "categories", "emojis", "reactions",
       "with","between",
-      "named","color"
+      "named","color",
+      "for", "can",
+      "a", "an", "the",
+      "toall",
+      "can","cannot"
 
 ]
 

@@ -1,5 +1,10 @@
 from tusk.token import Token
 
+def istusk(obj):
+    if hasattr(obj,"value") and hasattr(obj,"properties"):
+        return True
+    return False
+
 class Variable:
     def __init__(self,name, value, properties={}):
         self.name = name
@@ -9,6 +14,13 @@ class Variable:
     def update_property(self,property_name,property_value):
         self.value = self
         self.properties[property_name] = property_value
+
+    def get_value(self):
+        if istusk(self.value):
+            return self.value.get_value()
+        else:
+            return self.value
+
     def __repr__(self):
         return f"<VARIABLE {self.name} = {self.value if self.value != self else ''}{self.properties}>"
 
