@@ -87,7 +87,7 @@ class Client(commands.Bot):
     def remove_script_associations(self,script:str):
         for event in self.event_executors:
             for executor in self.event_executors[event].copy():
-                if executor[1].file == script:
+                if executor["interpreter"].file == script:
                     self.event_executors[event].remove(executor)
 
     def reload_config(self):
@@ -108,6 +108,7 @@ class Client(commands.Bot):
     ########### EVENTS ###########
     async def on_message(self,message): 
         debug_print("Executing message event",config=self.config)
+        if message.author.bot: return
         async def srd(data):
             data["vars"]["event_message"] = MessageClass(message)
             data["vars"]["event_user"] = UserClass(message.author)
@@ -225,7 +226,17 @@ class Client(commands.Bot):
             data["vars"]["event_user"] = UserClass(user)
             return data
         await self.event_executor("typing",srd)
+    """
+    Coming in V0.0.3
+    async def on_member_update(self,before,after):
+        async def srd(data):
+            data["vars"]["event_user"] = UserClass(after)
+            data["vars"]["event_user_before"] = UserClass(before)
+            data["vars"]["event_server"] = GuildClass(after.guild,fast=True)
+            return data
+        await self.event_executor("member_update",srd)
 
+    """
     
     
     

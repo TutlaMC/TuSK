@@ -1,9 +1,8 @@
 Add:
 
-- Discord Node?
 - Debug the panels
 - Filemanager for panel
 - Change channel/role permissions
 - Optional brackets
-- make to_discord_object a node
 
+- myself/me/I

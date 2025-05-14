@@ -1,5 +1,4 @@
-set car to "Tesla" # pls no hate
+set car to "Range Rover"
 set car 's horsepower to 800
-set car 's horsepower 's count to 8000
 
-print car 's horsepower 's count
+print car 's horsepower

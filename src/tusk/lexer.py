@@ -61,7 +61,7 @@ PermissionNames = {
 }
 
 KEYWORDS = [
-      "to",
+      
       "then", "elseif", "else",
       "that",
       "times","do","as",
@@ -72,14 +72,16 @@ KEYWORDS = [
       "get","post","headers","json",
       "character","item","number",
       "file", "variable", 
-      "channel", "server","member","user","message", "category", "emoji", "reaction",
-      "channels", "servers", "members", "users", "messages", "categories", "emojis", "reactions",
+      "channel", "server","member","user","message", "category", "emoji", "reaction", "role",
+      "channels", "servers", "members", "users", "messages", "categories", "emojis", "reactions", "roles",
       "with","between",
       "named","color",
       "for", "can",
-      "a", "an", "the",
+      "a", "an", "the","so","to",
       "toall",
-      "can","cannot"
+      "can","cannot",
+      "because"
+      
 
 ]
 
@@ -99,7 +101,10 @@ EFFECTS = [
     
     # Discord
     "send","edit",
-    "create"
+    "create",
+    "allow","disallow",
+    "change",
+    "grant","revoke"
 ]
 
 STRUCTURES = [
@@ -132,8 +137,8 @@ class Lexer:
 
         self.interpreter = interpreter
       
-    def reg(self, name, val):
-        self.tokens.append(Token("STRING", self.ctoken, self.interpreter))
+    def reg(self, name, value):
+        self.tokens.append(Token(name.upper(), value, self.interpreter))
         self.ctoken = ""
     
     def classify_tokens(self):
@@ -145,6 +150,7 @@ class Lexer:
 
         in_string = False
         in_comment = False
+        hex_count = 0
         start_quote_type = None     
 
         for i in "(){}[],;:+-/%*^,":
@@ -157,8 +163,7 @@ class Lexer:
                 if j == start_quote_type:
                     in_string = False
                     self.ctoken = self.ctoken.replace("\\n","\n")
-                    self.tokens.append(Token("STRING", self.ctoken, self.interpreter))
-                    self.ctoken = ""
+                    self.reg("STRING", self.ctoken)
                 else:
                     if start_quote_type=="'" and self.ctoken=="s ":
                         in_string = False
@@ -170,6 +175,17 @@ class Lexer:
                     in_comment = False
                     self.ctoken = ""
                 else: pass
+            elif hex_count > 0:
+                if j in "0123456789abcdef":
+                    hex_count += 1
+                    if hex_count == 7:
+                        self.tokens.append(Token("COLOR", int("0x" + self.ctoken[1:] + j, 16), self.interpreter))
+                        self.ctoken = ""
+                        hex_count = 0
+                    else:
+                        self.ctoken += j
+                else:
+                    hex_count = 0
             else:
                 if j in "(){}[],;:":
                     token_type = {
@@ -191,6 +207,10 @@ class Lexer:
                     if not (len(text) > reader_pos+6 and all(c.lower() in "0123456789abcdef" for c in text[reader_pos+1:reader_pos+7])):
                         in_comment = True
                         self.ctoken = ""
+                    else:
+                        hex_count = 1
+                        self.ctoken = j
+                        print(self.ctoken)
                 elif j in ["'", '"']:
                     in_string = True
                     start_quote_type = j
@@ -231,6 +251,8 @@ class Lexer:
                         elif self.ctoken in EVENT_TYPES:
                             self.tokens.append(Token("EVENT_TYPE", self.ctoken, self.interpreter))
                             self.ctoken = ""
+                        elif self.ctoken in PermissionNames:
+                            self.reg("PERMISSION", self.ctoken)
                         elif self.ctoken in ["+", "-", "*", "/","**", "%"]:
                             self.tokens.append(Token("OPERATOR", self.ctoken, self.interpreter))
                             self.ctoken = ""

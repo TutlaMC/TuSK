@@ -4,7 +4,12 @@
 
 ADD:
 - Uses `asyncio` for waiting instead of `time`, thought you can still use time  with `wait for`
+- `allow|disallow user|role [user]|[role] to [PERMISSION] in channel|server|category [channel]|[server]|[category] [because [expression]]+`
 
 FIXED:
 - Recursion issue ( fixed it a few hours ago so I forgot what exactly caused it, but I expect it to be a common issue).
 - `event_reaction's emoji`, `event_channel's server` all breaking because NameNode expected it as token
+- `create channel|role`
+
+
+

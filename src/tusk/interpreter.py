@@ -151,7 +151,7 @@ class Interpreter:
             self.current_token = self.tokens[self.pos]
             return self.current_token
         else:
-            raise Exception("Unfinished expression at ENDSCRIPT")
+            self.error("UnfinishedExpression", "Unfinished expression at ENDSCRIPT")
     
     def expect_token(self, token_types):
         token_types = token_types.replace(" ","").split("|")
@@ -167,9 +167,9 @@ class Interpreter:
                 if next_tkn.type == i:
                     return self.next_token()
         if "IDENTIFIER" in token_types:
-            self.error("UnexpectedToken",f"Expected token {str(token_types)}, got {next_tkn.type}", notes=["Possible Fix: You might have entered a keyword as a variable name, try renaming it"])
+            self.error("UnexpectedToken",f"Expected token {str(token_types)}, got {next_tkn}", notes=["Possible Fix: You might have entered a keyword as a variable name, try renaming it"])
         else:
-            self.error("UnexpectedToken",f"Expected token {str(token_types)}, got {next_tkn.type}")
+            self.error("UnexpectedToken",f"Expected token {str(token_types)}, got {next_tkn}")
     
     def expect_tokens(self, token_types):
         token_types = token_types.replace(" ","").split(";")
@@ -193,6 +193,7 @@ class Interpreter:
         for i in notes:
             print(i)
         print("=======================================\n")
+        self.end_found = True
         #exit()
 
     def debug_msg(self, *args,color="blue"):

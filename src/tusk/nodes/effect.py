@@ -20,7 +20,7 @@ class EffectNode(Node):
             from tusk.nodes.effects.set import SetNode
             await SetNode(self.token).create()
         elif self.token.value == "wait":
-            if self.interpreter.get_next_token().value != "for":
+            if self.interpreter.get_next_token().value == "for":
                 try:
                     time.sleep((await ExpressionNode(self.interpreter.next_token()).create()).value)
                 except KeyboardInterrupt as e:
@@ -93,6 +93,15 @@ class EffectNode(Node):
         elif self.token.value == "create":
             from tusk.nodes.discord.effects.create import CreateNode
             self.value = (await CreateNode(self.token).create()).value
+        elif self.token.value == "allow":
+            from tusk.nodes.discord.effects.permissions_ import AllowNode
+            self.value = (await AllowNode(self.token).create())
+        elif self.token.value == "disallow":
+            from tusk.nodes.discord.effects.permissions_ import AllowNode
+            self.value = (await AllowNode(self.token).create())
+        elif self.token.value == "change":
+            from tusk.nodes.discord.effects.change import ChangeNode
+            self.value = (await ChangeNode(self.token).create())
 
         # delete is in tusk.nodes.del_
 

@@ -26,7 +26,7 @@ def get_exec_names():
             "emoji_delete":[], # triggered when emoji is deleted
 }
 
-async def to_discord_object(bot:discord.Client, obj, to_type, references=[]):
+async def to_discord_object(bot, obj, to_type, references=[]):
     objl = []
     if not type(obj) == list:
         objl.append(obj)
@@ -51,6 +51,8 @@ async def to_discord_object(bot:discord.Client, obj, to_type, references=[]):
                 tobj = obj.properties["python"]
             elif type(obj) in [discord.TextChannel, discord.abc.GuildChannel, discord.abc.PrivateChannel, discord.VoiceChannel, discord.StageChannel, discord.CategoryChannel, discord.Thread]:
                 tobj = obj
+            else:
+                raise Exception(f"you fucked up lmao {obj}")
         elif to_type == "user":
             if type(obj) == int:
                 tobj = await bot.fetch_user(obj)
@@ -78,6 +80,13 @@ async def to_discord_object(bot:discord.Client, obj, to_type, references=[]):
             elif type(obj) == EmojiClass:
                 tobj = obj.properties["python"]
             elif type(obj) in [discord.Emoji]:
+                tobj = obj
+        elif to_type == "category":
+            if type(obj) == int:
+                tobj = await bot.fetch_channel(obj)
+            elif type(obj) == CategoryClass:
+                tobj = obj.properties["python"]
+            elif type(obj) in [discord.CategoryChannel]:
                 tobj = obj
         else:
             raise Exception(f"you fucked up lmao {obj}")
@@ -180,7 +189,8 @@ class MessageClass(Variable):
         self.properties["attachments"] = message.attachments
         self.properties["reactions"] = message.reactions
         if message.reference != None:
-            self.properties["reference"] = MessageClass(message.reference)
+            pass
+            #self.properties["reference"] = MessageClass(message.reference)
         else:
             self.properties["reference"] = None
         self.properties["mentions"] = message.mentions
@@ -208,6 +218,7 @@ class UserClass(Variable):
         self.properties["usage"] = f"<@{self.properties['id']}>"
         if hasattr(user, "roles"):
             self.properties["roles"] = [RoleClass(role) for role in user.roles]
+        self.properties["top_role"] = RoleClass(user.top_role)
         self.properties["python"] = user
 
 class GuildClass(Variable):
@@ -244,7 +255,7 @@ class GuildClass(Variable):
         self.properties["threads"] = guild.threads
         self.properties["python"] = guild
 class ChannelClass(Variable):
-    def __init__(self, channel:discord.abc.GuildChannel,list_parent=True):
+    def __init__(self, channel,list_parent=True):
         self.name = channel
         self.value = channel.name
         self.properties = {}
@@ -252,7 +263,6 @@ class ChannelClass(Variable):
         self.properties["id"] = channel.id
         self.properties["type"] = channel.type
         self.properties["position"] = channel.position
-        self.properties["category"] = channel.category
         self.properties["usage"] = f"<#{self.properties['id']}>"
         if type(channel) == discord.TextChannel:
             self.properties["topic"] = channel.topic

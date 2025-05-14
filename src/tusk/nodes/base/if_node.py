@@ -26,7 +26,6 @@ class IfNode(Node):
         internal_structure_count = 0
         while self.end_found != True:
             nxt_tkn = self.interpreter.get_next_token()
-            print(nxt_tkn, internal_structure_count)
             if nxt_tkn.type=="ENDSTRUCTURE":
                 if internal_structure_count == 0:
                     self.interpreter.next_token()

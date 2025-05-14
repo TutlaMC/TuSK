@@ -48,7 +48,7 @@ async def get_type_(token):
     elif type_ == list: return "LIST"
     elif type_ == dict: return "TSON"
     elif type_ == None: return "NOTHING"
-    return 
+    return f"<Pythonic:{str(type_)}>"
 
 def is_ordinal_number(token: Token):
     if token.type == "IDENTIFIER":

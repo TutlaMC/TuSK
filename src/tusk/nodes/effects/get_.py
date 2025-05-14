@@ -16,7 +16,6 @@ class GetNode(Node):
         if e.type == "STRING":
             self.interpreter.expect_token("LOGIC:in")
             list_ = (await ExpressionNode(self.interpreter.next_token()).create()).value
-            print(list_)
             if type(list_) == str:
                 self.value = list_.index(e.value)
             elif type(list_) == list:
@@ -37,7 +36,7 @@ class GetNode(Node):
             else:
                 raise Exception(f"get requires <string> or <list> not {type(list_)}")
             return self
-        elif e.value in ["channel","server","member","user","message","role","emoji"]:
+        elif e.value in ["channel","server","member","user","message","role","emoji","category"]:
             bot:discord.Client = self.interpreter.bot
             name = (await ExpressionNode(self.interpreter.next_token()).create()).value
             if e.value == "channel":
@@ -52,6 +51,8 @@ class GetNode(Node):
                             break
                     else:
                         self.interpreter.error("ChannelNotFound", f"Channel with name '{name}' not found")
+                else:
+                    self.value = to_tusk_object(self.interpreter.bot, name, "channel")
             elif e.value == "server":
                 from tusk.discord_classes import GuildClass
                 if type(name) == int:
@@ -63,7 +64,7 @@ class GetNode(Node):
                             break
                     else:
                         self.interpreter.error("GuildNotFound", f"Guild with name '{name}' not found")
-                elif e.value == "user":
+            elif e.value == "user":
                     from tusk.discord_classes import UserClass
                     if type(name) == int:
                         self.value = UserClass(await self.interpreter.bot.fetch_user(int(name)))
@@ -74,7 +75,21 @@ class GetNode(Node):
                                 break
                         else:
                             self.interpreter.error("UserNotFound", f"User with name '{name}' not found")
-                elif e.value == "message":
+            elif e.value == "member":
+                from tusk.discord_classes import UserClass
+                self.interpreter.expect_token("LOGIC:in")
+                server = (await to_discord_object(self.interpreter.bot, (await ExpressionNode(self.interpreter.next_token()).create()).value, "guild"))
+                if type(name) == int:
+                    self.value = UserClass(await server.fetch_member(int(name)))
+                elif type(name) == str:
+                    for member in server.members:
+                        if member.name.lower() == name.lower():
+                            self.value = UserClass(member)
+                            break
+                    else:
+                        self.interpreter.error("MemberNotFound", f"Member with name '{name}' not found")
+                    
+            elif e.value == "message":
                     from tusk.discord_classes import MessageClass
                     if type(name) == int:
                         if self.interpreter.get_next_token().type == "LOGIC" and self.interpreter.get_next_token().value == "in":
@@ -98,11 +113,17 @@ class GetNode(Node):
                         else:
                             self.interpreter.error("MessageNotFound", f"Message with content '{name}' not found")
 
-                elif e.value == "role":
+            elif e.value == "role":
                     from tusk.discord_classes import RoleClass
                     if type(name) == int:
-                    
-                        self.value = RoleClass(await self.interpreter.bot.fetch_role(int(name)))
+                        self.interpreter.expect_token("LOGIC:in")
+                        server = (await to_discord_object(self.interpreter.bot, (await ExpressionNode(self.interpreter.next_token()).create()).value, "guild"))
+                        for role in server.roles:
+                            if role.id == name:
+                                self.value = RoleClass(role)
+                                break
+                        else:
+                            self.interpreter.error("RoleNotFound", f"Role with id '{str(name)}' not found")
                     elif type(name) == str:
                         self.interpreter.expect_token("LOGIC:in")
                         server = (await to_discord_object(self.interpreter.bot, (await ExpressionNode(self.interpreter.next_token()).create()).value, "guild"))
@@ -112,7 +133,7 @@ class GetNode(Node):
                                 break
                         else:
                             self.interpreter.error("RoleNotFound", f"Role with name '{name}' not found")
-                elif e.value == "emoji":
+            elif e.value == "emoji":
                     from tusk.discord_classes import EmojiClass
                     if type(name) == int:
                         self.interpreter.expect_token("LOGIC:in")
