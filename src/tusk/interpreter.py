@@ -12,7 +12,7 @@ from tusk.nodes.statement import StatementNode
 from tusk.nodes.base.function import FunctionNode
 from tusk.nodes.base.return_node import ReturnNode
 
-from tusk.discord_classes import get_exec_names
+from tusk.discord_classes import *
 
 ### INTERPRETER
 
@@ -20,7 +20,7 @@ class Interpreter:
     def __init__(self):      
         self.return_value = True
 
-    def setup(self, data=None, tokens=None, text=None, bot=None, file=None):
+    def setup(self, data=None, tokens=None, text=None, bot=None, file=None, is_cmd=False):
         if data==None:
             self.data = {
                 "vars":{},
@@ -36,6 +36,8 @@ class Interpreter:
             with open(file, "r") as f:
                 self.text = f.read()
             self.file=file
+            if is_cmd:
+                self.text = "\n".join(self.text.split("\n")[1:])
         else: self.file = "<stdin>"
 
         if tokens==None:
@@ -45,7 +47,23 @@ class Interpreter:
             self.tokens = self.change_token_parent(self)
         if bot == None:
             self.error("BotNotFound", "The bot specified does not exist", notes=["This error is caused by setup, it is not script-side error"])
-        self.bot = bot
+        self.bot:discord.Client|discord.Bot = bot
+        if hasattr(self.bot, "user"):
+            self.data["vars"]["me"] = UserClass(self.bot.user)
+            self.data["vars"]["myself"] = self.data["vars"]["me"]
+            self.data["vars"]["I"] = self.data["vars"]["me"]
+            self.data["vars"]["my"] = self.data["vars"]["me"]
+
+            if len(self.bot.guilds) > 0:
+                self.data["vars"]["my_guild"] = GuildClass(self.bot.guilds[0])
+                self.data["vars"]["my_server"] = self.data["vars"]["my_guild"]
+
+                for i in self.bot.guilds[0].channels:
+                    if "general" in i.name.lower() and type(i) == discord.TextChannel:
+                        self.data["vars"]["my_channel"] = ChannelClass(i)
+                        
+            
+
         self.pos = 0
         self.current_token = self.tokens[self.pos]
 
@@ -92,14 +110,14 @@ class Interpreter:
                     return self.return_value
 
 
-    def change_token_parent(self, interpreter):
+    def change_token_parent(self, interpreter) -> list[Token]:
         tokens = []
         for token in self.tokens:
             token.interpreter = interpreter
             tokens.append(token)
         return tokens
     
-    def get_var(self, var_name):
+    def get_var(self, var_name) -> any:
         if isinstance(var_name, Token): var_name = var_name.value
         if var_name in self.data["vars"]:
             return self.data["vars"][var_name]
@@ -107,7 +125,7 @@ class Interpreter:
             raise Exception(f"IDENTIFIER {var_name} is undefined")
     
 
-    def arrows_at_pos(self):
+    def arrows_at_pos(self) -> str:
         recreated_code = ""
         arrows=""
         npos = 0
@@ -137,14 +155,19 @@ class Interpreter:
             
 
 
-    def get_next_token(self,nx=0): 
+    def get_next_token(self,nx=0) -> Token|None: 
         if self.pos+nx >= len(self.tokens)-1:
             return None
         else: return self.tokens[self.pos+1+nx]
     
+    def is_token(self,token_type) -> bool:
+        token_type = token_type.split(":")
+        if self.get_next_token().value == token_type[1] and self.get_next_token().type == token_type[0]:
+            return True
+        else:
+            return False
 
-
-    def next_token(self):
+    def next_token(self) -> Token:
         next_tkn = self.get_next_token()
         if next_tkn !=None:
             self.pos+=1
@@ -153,7 +176,7 @@ class Interpreter:
         else:
             self.error("UnfinishedExpression", "Unfinished expression at ENDSCRIPT")
     
-    def expect_token(self, token_types):
+    def expect_token(self, token_types, notes:list[str]=[]) -> Token:
         token_types = token_types.replace(" ","").split("|")
 
         next_tkn = self.get_next_token()
@@ -169,9 +192,9 @@ class Interpreter:
         if "IDENTIFIER" in token_types:
             self.error("UnexpectedToken",f"Expected token {str(token_types)}, got {next_tkn}", notes=["Possible Fix: You might have entered a keyword as a variable name, try renaming it"])
         else:
-            self.error("UnexpectedToken",f"Expected token {str(token_types)}, got {next_tkn}")
+            self.error("UnexpectedToken",f"Expected token {str(token_types)}, got {next_tkn}",notes=notes)
     
-    def expect_tokens(self, token_types):
+    def expect_tokens(self, token_types) -> list[Token]:
         token_types = token_types.replace(" ","").split(";")
         tokens = []
 
@@ -184,7 +207,7 @@ class Interpreter:
         
         return tokens
     
-    def error(self, error_name, error_desc, notes=[]):
+    def error(self, error_name:str, error_desc:str, notes:list[str]=[]):
         print("\n================ ERROR ================")
         print(f"{error_name}: {error_desc}")
         print("============== POSITION ===============")

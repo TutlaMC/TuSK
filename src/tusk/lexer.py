@@ -67,20 +67,21 @@ KEYWORDS = [
       "times","do","as",
       "what","type",
       "characters","items","all",
-      "from","of","length","by","till",
+      "from","of","by","till",
       "capture",
       "get","post","headers","json",
       "character","item","number",
       "file", "variable", 
-      "channel", "server","member","user","message", "category", "emoji", "reaction", "role",
-      "channels", "servers", "members", "users", "messages", "categories", "emojis", "reactions", "roles",
+      "channel", "server","member","user","message", "category", "emoji", "reaction", "role", "attachment",
+      "channels", "servers", "members", "users", "messages", "categories", "emojis", "reactions", "roles", "attachments",
       "with","between",
       "named","color",
       "for", "can",
       "a", "an", "the","so","to",
       "toall",
       "can","cannot",
-      "because"
+      "because",
+      "delete_after"
       
 
 ]
@@ -90,6 +91,7 @@ EFFECTS = [
     "print",
     "wait",
     "add","remove","split","replace", 
+    "length",
     "input","convert",
     "shell", "python",
     "request",
@@ -104,16 +106,18 @@ EFFECTS = [
     "create",
     "allow","disallow",
     "change",
-    "grant","revoke"
+    "grant","revoke",
+    "kick","ban","unban","timeout"
 ]
 
 STRUCTURES = [
-    "if","while","create","function","loop",
+    "if","while","function","loop",
     "on"
 ]
 
 EVENT_TYPES = [
-    "message","reaction","voice","join","leave","typing", "ready"
+    "voice","join","leave","typing", "ready"
+    # read tusk.nodes.discord.base.on.py for more effects
 ]
 
 COLORS = {

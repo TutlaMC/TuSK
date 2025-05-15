@@ -6,12 +6,12 @@ def istusk(obj):
     return False
 
 class Variable:
-    def __init__(self,name, value, properties={}):
+    def __init__(self, name, value, properties={}):
         self.name = name
         self.value = value
-        self.properties = {}
+        self.properties = properties
         
-    def update_property(self,property_name,property_value):
+    def update_property(self, property_name, property_value):
         self.value = self
         self.properties[property_name] = property_value
 

@@ -25,6 +25,7 @@ class IfNode(Node):
 
         internal_structure_count = 0
         while self.end_found != True:
+            self.interpreter.debug_msg(self.token,(self.run_if or self.run_else),internal_structure_count, self.interpreter.current_token, self.interpreter.get_next_token(), "If (node) read")
             nxt_tkn = self.interpreter.get_next_token()
             if nxt_tkn.type=="ENDSTRUCTURE":
                 if internal_structure_count == 0:
@@ -64,10 +65,13 @@ class IfNode(Node):
             else: 
                 e = self.interpreter.next_token()
                 
+                
+                
                 if self.run_if or self.run_else:
+                    await StatementNode(e).create()
+                else:
                     if nxt_tkn.type == "STRUCTURE":
                         internal_structure_count += 1
-                    await StatementNode(e).create()
         self.interpreter.debug_msg(self.token,self.condition.value,self.success, self.interpreter.current_token, "If (node) end")
         return self
        

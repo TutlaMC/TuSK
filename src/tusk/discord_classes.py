@@ -1,6 +1,6 @@
 from tusk.variable import Variable
 import discord
-
+import asyncio
 from tusk.lexer import PermissionNames
 
 def get_exec_names():
@@ -87,6 +87,13 @@ async def to_discord_object(bot, obj, to_type, references=[]):
             elif type(obj) == CategoryClass:
                 tobj = obj.properties["python"]
             elif type(obj) in [discord.CategoryChannel]:
+                tobj = obj
+        elif to_type == "attachment":
+            if type(obj) == int:
+                tobj = await bot.fetch_channel(obj)
+            elif type(obj) == AttachmentClass:
+                tobj = obj.properties["python"]
+            elif type(obj) in [discord.Attachment]:
                 tobj = obj
         else:
             raise Exception(f"you fucked up lmao {obj}")
@@ -186,13 +193,13 @@ class MessageClass(Variable):
         self.properties["created_at"] = str(message.created_at)
         self.properties["id"] = message.id
         self.properties["embeds"] = message.embeds
-        self.properties["attachments"] = message.attachments
+        self.properties["attachments"] = [AttachmentClass(attachment) for attachment in message.attachments]
+        self.properties["has_attachments"] = len(self.properties["attachments"]) > 0
         self.properties["reactions"] = message.reactions
         if message.reference != None:
-            pass
-            #self.properties["reference"] = MessageClass(message.reference)
+            self.properties["reference_id"] = MessageClass(message.reference.message_id)
         else:
-            self.properties["reference"] = None
+            self.properties["reference_id"] = None
         self.properties["mentions"] = message.mentions
         self.properties["tts"] = message.tts
         self.properties["python"] = message
@@ -216,9 +223,14 @@ class UserClass(Variable):
         self.properties["banner"] = user.banner
         self.properties["mention"] = user.mention
         self.properties["usage"] = f"<@{self.properties['id']}>"
-        if hasattr(user, "roles"):
+        if hasattr(user, "roles"): # this is a member
             self.properties["roles"] = [RoleClass(role) for role in user.roles]
-        self.properties["top_role"] = RoleClass(user.top_role)
+            self.properties["top_role"] = RoleClass(user.top_role)
+            self.properties["nick"] = user.nick
+            self.properties["joined_at"] = str(user.joined_at)
+            self.properties["member"] = True
+        else: 
+            self.properties["member"] = False
         self.properties["python"] = user
 
 class GuildClass(Variable):
@@ -347,8 +359,26 @@ class ReactionClass(Variable):
             self.properties["emoji"] = EmojiClass(reaction.emoji, is_str=True, other=reaction.message.channel)
         self.properties["python"] = reaction
 
-dsc_obj_types = [discord.Message,discord.TextChannel,discord.User,discord.Guild,discord.Role,discord.Emoji,discord.CategoryChannel,discord.Reaction,discord.Member, discord.PartialEmoji, discord.PartialMessage]
-tusk_obj_types = [MessageClass,ChannelClass,UserClass,GuildClass,RoleClass,EmojiClass,CategoryClass,ReactionClass]
+class AttachmentClass(Variable):
+    def __init__(self, attachment:discord.Attachment|discord.File):
+        self.name = attachment
+        self.value = attachment.filename
+        self.properties = {}
+        self.properties["filename"] = attachment.filename
+        if hasattr(attachment, "url"):
+            self.properties["content"] = None
+            self.properties["is_voice_message"] = attachment.is_voice_message()
+            self.properties["spoiler"] = attachment.is_spoiler()
+            self.properties["content_type"] = attachment.content_type
+            self.properties["id"] = attachment.id
+            self.properties["size"] = attachment.size
+            self.properties["url"] = attachment.url
+        else:
+            self.properties["spoiler"] = False
+        self.properties["python"] = attachment
+
+dsc_obj_types = [discord.Message,discord.TextChannel,discord.User,discord.Guild,discord.Role,discord.Emoji,discord.CategoryChannel,discord.Reaction,discord.Member, discord.PartialEmoji, discord.PartialMessage, discord.Attachment]
+tusk_obj_types = [MessageClass,ChannelClass,UserClass,GuildClass,RoleClass,EmojiClass,CategoryClass,ReactionClass,AttachmentClass]
 
 
 
@@ -358,6 +388,7 @@ def is_discord_object(obj):
     return False
 
 def is_tusk_object(obj):
+    print(type(obj),"is tusk object")
     if type(obj) in tusk_obj_types:
         return True
     return False    

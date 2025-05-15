@@ -33,4 +33,4 @@ Wait wait wait... before you click away, see why TuSK is better than its competi
 | BotGhost               | Limits you to paid options but easier to learn | Free to use, infinitely customizable |
 | BotDesignerForDiscord  | Pay to host, but similar to TuSK in features   | BDFD is very similar to TuSK but TuSK is open source and lets you capture output from external sources and post/get data from databases, TuSK also has a much better learning curve |
 | discord.js/discord.py  | Hard to learn/setup but offers MUCH more features than TuSK | `shell capture "python3 idea.py` is always there for you |
-| chatgpt/ai             | Screws you sometimes but ofcourse you can build so much with it | Use ChatGPT with TuSK (coming soon) |
+| chatgpt/ai             | Screws you sometimes but of course you can build so much with it | Use ChatGPT with TuSK (coming soon) |

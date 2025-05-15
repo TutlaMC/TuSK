@@ -84,12 +84,9 @@ class EffectNode(Node):
 
 
         ####################### DISCORD EFFECTS #######################
-        elif self.token.value == "send":
-            from tusk.nodes.discord.effects.messages_ import SendNode
-            self.value = (await SendNode(self.token).create()).value
-        elif self.token.value == "edit":
-            from tusk.nodes.discord.effects.messages_ import EditNode
-            self.value = (await EditNode(self.token).create()).value
+        elif self.token.value in ["send","edit"]:
+            from tusk.nodes.discord.effects.messages_ import MessageNode
+            self.value = (await MessageNode(self.token).create()).value
         elif self.token.value == "create":
             from tusk.nodes.discord.effects.create import CreateNode
             self.value = (await CreateNode(self.token).create()).value
@@ -102,7 +99,25 @@ class EffectNode(Node):
         elif self.token.value == "change":
             from tusk.nodes.discord.effects.change import ChangeNode
             self.value = (await ChangeNode(self.token).create())
-
+        elif self.token.value == "grant":
+            from tusk.nodes.discord.effects.roles import RoleNode
+            self.value = (await RoleNode(self.token).create())
+        elif self.token.value == "revoke":
+            from tusk.nodes.discord.effects.roles import RoleNode
+            self.value = (await RoleNode(self.token).create())
+        elif self.token.value == "timeout":
+            from tusk.nodes.discord.effects.admin import TimeoutNode
+            self.value = (await TimeoutNode(self.token).create())
+        elif self.token.value == "kick":
+            from tusk.nodes.discord.effects.admin import KickNode
+            self.value = (await KickNode(self.token).create())
+        elif self.token.value == "ban":
+            from tusk.nodes.discord.effects.admin import BanNode
+            self.value = (await BanNode(self.token).create())
+        elif self.token.value == "unban":
+            from tusk.nodes.discord.effects.admin import UnbanNode
+            self.value = (await UnbanNode(self.token).create())
+            
         # delete is in tusk.nodes.del_
 
         return self

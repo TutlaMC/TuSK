@@ -1,6 +1,6 @@
 from tusk.token import Token
 from tusk.node import Node
-from tusk.nodes.expressions import ExpressionNode
+from tusk.nodes.expressions import ExpressionNode, FactorNode
 from tusk.variable import is_ordinal_number
 
 class AddNode(Node):
@@ -12,7 +12,7 @@ class AddNode(Node):
     async def create(self):
         item = (await ExpressionNode(self.interpreter.next_token()).create()).value
         self.interpreter.expect_token("KEYWORD:to")
-        list_ = (await ExpressionNode(self.interpreter.next_token()).create()).value
+        list_ = (await FactorNode(self.interpreter.next_token()).create()).value
         if type(list_) in [float, int, str]: 
             self.value = item+list_
         elif type(list_) == dict:
@@ -36,7 +36,7 @@ class RemoveNode(Node):
         if item:
             item-=1
             self.interpreter.expect_token("KEYWORD:from")
-            list_ = (await ExpressionNode(self.interpreter.next_token()).create()).value
+            list_ = (await FactorNode(self.interpreter.next_token()).create()).value
             if type(list_) == list: 
                 list_.pop(item)
                 self.value = list_
@@ -59,7 +59,7 @@ class ReplaceNode(Node):
         self.interpreter.expect_token("KEYWORD:with")
         with_replace = (await ExpressionNode(self.interpreter.next_token()).create()).value
         self.interpreter.expect_token("LOGIC:in")
-        list_ = (await ExpressionNode(self.interpreter.next_token()).create()).value
+        list_ = (await FactorNode(self.interpreter.next_token()).create()).value
         if type(list_) == str:
             self.value = str(list_).replace(to_replace,with_replace)
         elif type(list_) == list:
@@ -107,7 +107,9 @@ class LengthNode(Node):
         self.token = token
         
     async def create(self):
-        self.value = len((await ExpressionNode(self.interpreter.next_token()).create()).value)
+        self.interpreter.expect_token("KEYWORD:of")
+        e = (await FactorNode(self.interpreter.next_token()).create()).value
+        self.value = len(e)
         return self
 
 

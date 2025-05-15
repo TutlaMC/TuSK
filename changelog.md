@@ -1,15 +1,14 @@
-# V0.0.2
-
-**NT STANDS FOR NOT TESTED: THIS VERSION IS NOT TESTED SO YOU MAY RUN INTO ERRORS, REPORT THEM ON THE DISCORD**
+# V0.0.3-NT
 
 ADD:
-- Uses `asyncio` for waiting instead of `time`, thought you can still use time  with `wait for`
-- `allow|disallow user|role [user]|[role] to [PERMISSION] in channel|server|category [channel]|[server]|[category] [because [expression]]+`
+- Grant/Revoke Roles
+- Change Channel/Role/Category/Server/User
+- Reading/Sending/Creating Attachments
 
 FIXED:
-- Recursion issue ( fixed it a few hours ago so I forgot what exactly caused it, but I expect it to be a common issue).
-- `event_reaction's emoji`, `event_channel's server` all breaking because NameNode expected it as token
-- `create channel|role`
+- `length` giving an error when useed in if statements, fixed by connverting ExpressionNode to FactorNode
 
-
-
+BACKEND:
+- Changed how IF statements work
+- Changed implementation of editing messages
+- Reopimized While loops and if statements

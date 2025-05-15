@@ -31,7 +31,6 @@ class SetNode(Node):
             """
             n = (await NameNode(self.interpreter.current_token).create())
 
-
             self.interpreter.expect_token("KEYWORD:to")
             value = (await ExpressionNode(self.interpreter.next_token()).create()).value
             if isinstance(value, Variable):

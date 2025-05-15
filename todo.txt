@@ -2,7 +2,14 @@ Add:
 
 - Debug the panels
 - Filemanager for panel
-- Change channel/role permissions
 - Optional brackets
+- Hard Check the concatenation
 
-- myself/me/I
+- JSON Loader
+- Regex
+- Better Concatenation
+- Better Objects
+- JSK Integration
+- Better function paraemeters
+- Better Globalization
+- Command System

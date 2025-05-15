@@ -1,10 +1,6 @@
 on message
-    if event_user can administrator in event_channel then
-        change name of channel event_channel to "💻｜tusk-lab"
-        change topic of channel event_channel to "Tusk Testing Gang"
-    else
-        print event_user's name
-        set darole to get role 1189449885632712832 in event_server
-        grant event_user darole
-    end    
+    if event_message's content is "eee" then
+        set msg to send "gyatt" to event_channel
+        edit msg to "wigma wiggily lalbs" 
+    end
 end

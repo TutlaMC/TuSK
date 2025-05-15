@@ -9,7 +9,7 @@ class ChangeNode(Node):
         
     async def create(self):
         from tusk.nodes.expressions import ExpressionNode
-
+        
         to_change = self.interpreter.next_token().value
         self.interpreter.expect_token("LOGIC:of")
         context_type = self.interpreter.expect_token("KEYWORD:channel|KEYWORD:server|KEYWORD:category|KEYWORD:role|KEYWORD:user").value
@@ -23,7 +23,7 @@ class ChangeNode(Node):
         elif context_type == "role":
             context = await to_discord_object(self.interpreter.bot, (await ExpressionNode(self.interpreter.next_token()).create()).value, "role")
         elif context_type == "user":
-            context = await to_discord_object(self.interpreter.bot, (await ExpressionNode(self.interpreter.next_token()).create()).value, "user")
+            context:discord.Member|discord.User = await to_discord_object(self.interpreter.bot, (await ExpressionNode(self.interpreter.next_token()).create()).value, "user")
         else:
             self.interpreter.error("InvalidContext",f"You provided {context_type}. Try providing a valid context (read docs)")
 
@@ -66,6 +66,11 @@ class ChangeNode(Node):
             await context.edit(color=new_value, reason=reason)
         elif to_change == "mentionable":
             await context.edit(mentionable=new_value, reason=reason)
+        elif to_change == "nick":
+            if type(context) == discord.Member:
+                await context.edit(nick=new_value, reason=reason)
+            else:
+                self.interpreter.error("InvalidContext",f"You provided {context_type}. Try providing a valid context (read docs)")
         else:
             self.interpreter.error("InvalidChange",f"You provided {to_change}. Try providing a valid change (read docs)")
 

@@ -1,7 +1,4 @@
-from discord import app_commands
-import discord
-from discord.ext import commands
-import discord
+from cog_core import *
 import requests
 
 url = "https://raw.githubusercontent.com/TutlaMC/tusk/main/changelog.md"
@@ -24,6 +21,7 @@ class TuSKDefaultBotCore(commands.Cog):
 
 
     @app_commands.command(name="reload",description='Reload the bot data')
+    @developer_only()
     async def reload_callback(self,interaction: discord.Interaction):
         self.bot.load_scripts()
         self.bot.reload_config()

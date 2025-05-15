@@ -2,10 +2,11 @@ from tusk.token import Token
 from tusk.node import Node
 from tusk.variable import Variable, istusk
 from tusk.discord_classes import is_tusk_object
+import inspect
+
 class NameNode(Node):
     def __init__(self, token:Token):
         self.interpreter = token.interpreter
-        interpreter = token.interpreter
         self.token = token
 
         self.name = token.value # variable name

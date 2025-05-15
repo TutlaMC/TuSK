@@ -1,7 +1,4 @@
-from discord import app_commands
-import discord
-from discord.ext import commands
-import discord
+from cog_core import *
 import requests
 import json
 import os
@@ -246,23 +243,7 @@ class RPCView(discord.ui.View):
     async def add_status(self, ctx: discord.Interaction, button: discord.ui.Button):
         await ctx.response.send_modal(RPCAddForm())
 
-#########################################################
 
-
-def owner_only():
-    async def predicate(ctx: discord.Interaction) -> bool:
-        return ctx.user.id in ctx.client.config["roles"]["owners"]
-    return app_commands.check(predicate)
-
-def admin_only():
-    async def predicate(ctx: discord.Interaction) -> bool:
-        return ctx.user.id in ctx.client.config["roles"]["admins"].copy().append(ctx.client.config["roles"]["owners"])
-    return app_commands.check(predicate)
-
-def developer_only():
-    async def predicate(ctx: discord.Interaction) -> bool:
-        return ctx.user.id in ctx.client.config["roles"]["developers"].copy().append(ctx.client.config["roles"]["admins"]).append(ctx.client.config["roles"]["owners"])
-    return app_commands.check(predicate)
 
 class TuSKSetup(commands.Cog):
     def __init__(self, bot):
@@ -285,7 +266,7 @@ class TuSKSetup(commands.Cog):
         text = f"""```yml
         ============== TUSK {config["version"]} ==============
         Bot Version: {config["version"]}
-        Bot Status: {bot.status.activity.name}
+        Bot Status: {str(bot.status)}
         Debug Mode: {str(config["debug"]).upper()}
 
         
