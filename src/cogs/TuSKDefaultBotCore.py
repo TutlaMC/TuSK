@@ -21,7 +21,7 @@ class TuSKDefaultBotCore(commands.Cog):
 
 
     @app_commands.command(name="reload",description='Reload the bot data')
-    @developer_only()
+    @owner_only()
     async def reload_callback(self,interaction: discord.Interaction):
         self.bot.load_scripts()
         self.bot.reload_config()
@@ -30,8 +30,6 @@ class TuSKDefaultBotCore(commands.Cog):
     @app_commands.command(name="version",description='Check the bot version')
     async def version(self,interaction: discord.Interaction):
         await interaction.response.send_message(self.bot.config["version"])
-
-
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(TuSKDefaultBotCore(bot))

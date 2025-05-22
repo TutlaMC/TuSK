@@ -3,6 +3,7 @@ import discord
 import random 
 import datetime
 from math import *
+import sys
 
 from discord import app_commands
 from discord.ext import tasks,commands
@@ -14,6 +15,9 @@ from tusk.discord_classes import get_exec_names
 
 from logger import *
 
+# Add the root directory to Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 class Client(commands.Bot):
     def __init__(self) -> None:
         intents = discord.Intents.all()
@@ -23,18 +27,30 @@ class Client(commands.Bot):
 
         with open("config.json", "r") as f:
             self.config = json.load(f)
-        self.startup_Flags = self.config["startup_flags"]
+        
+        # Start the tasks
+        
 
     async def setup_hook(self):
+        # Load cogs
+        if self.config["preinstalled_commands"]:
+            for filename in os.listdir('src/cogs'):
+                if filename.endswith('.py'):
+                    await client.load_extension(f'cogs.{filename[:-3]}')
+            
+            # Load packages
+            if os.path.exists('packages'):
+                for filename in os.listdir('packages'):
+                    if filename.endswith('.py') and not filename.startswith('__'):
+                        try:
+                            await client.load_extension(f'packages.{filename[:-3]}')
+                        except Exception as e:
+                            print(f"Failed to load package {filename}: {e}")
+            
+            if self.config["jsk"]:
+                await client.load_extension("jishaku")
 
-        for filename in os.listdir('src/cogs'):
-            if filename.endswith('.py'):
-                await client.load_extension(f'cogs.{filename[:-3]}')
-        
         await self.tree.sync()
-
-
-
 
     async def on_ready(self):
         self.load_scripts()
@@ -45,6 +61,8 @@ class Client(commands.Bot):
         async def srd(data):
             return data
         await self.event_executor("ready",srd)
+        await change_status.start()
+        await reload_conf.start()
 
     def load_scripts(self, enabled=True):
         if enabled:
@@ -69,7 +87,7 @@ class Client(commands.Bot):
             cprint(f"Compiled script: {script}",color="green")
         cprint("Compiled all scripts",color="green")
 
-    async def compile_script(self,script:str, temporary=False):
+    async def compile_script(self,script:str, temporary=False,data:dict=None):
         TuskInterpreter = Interpreter()
         if not temporary:
             TuskInterpreter.setup(bot=self, file=script)
@@ -80,7 +98,13 @@ class Client(commands.Bot):
                     for exe in TuskInterpreter.data["events"][event].copy():
                         self.event_executors[event].append(exe)
 
-            print(self.event_executors)
+        else:
+            TuskInterpreter.setup(bot=self, text=script)
+            if "fake_channel" in data:
+                TuskInterpreter.data["vars"]["event_channel"] = ChannelClass(data["fake_channel"])
+            if "fake_user" in data:
+                TuskInterpreter.data["vars"]["event_user"] = UserClass(data["fake_user"])
+            await TuskInterpreter.compile()
 
             
 
@@ -94,17 +118,19 @@ class Client(commands.Bot):
         with open("config.json", "r") as f:
             self.config = json.load(f)
 
-    async def event_executor(self,event:str,rd):
+    async def event_executor(self,event:str,rd,other=None):
         for executor in self.event_executors[event]:
             if executor != []:
                 event_interpreter = Interpreter()
+                if not executor["toall"]:
+                    if other.author.bot:
+                        continue
                 data = executor["interpreter"].data
                 
                 data = await rd(data)
                 event_interpreter.setup(data=data,tokens=executor["tokens"],bot=self)
                 await event_interpreter.compile()
     
-
     ########### EVENTS ###########
     async def on_message(self,message): 
         debug_print("Executing message event",config=self.config)
@@ -117,7 +143,7 @@ class Client(commands.Bot):
                 data["vars"]["event_guild"] = GuildClass(message.guild,fast=True)
                 data["vars"]["event_server"] = data["vars"]["event_guild"]
             return data
-        await self.event_executor("message",srd)
+        await self.event_executor("message",srd,other=message)
 
         debug_print("Message event executed",config=self.config)
     async def on_message_delete(self,message):
@@ -238,23 +264,36 @@ class Client(commands.Bot):
 
     """
     
-    
-    
-
-
-    
-
-client = Client()
-
 @tasks.loop(minutes=1)
 async def change_status():
     status = random.choice(client.config["status"]["loop"])
-    await client.change_presence(activity=discord.Activity(type=status["type"], name=status["message"]))
+    if status["type"] == "online":
+        status_type = discord.ActivityType.playing
+    elif status["type"] == "idle":
+        status_type = discord.ActivityType.idle
+    elif status["type"] == "dnd":
+        status_type = discord.ActivityType.dnd
+    elif status["type"] == "offline":
+        status_type = discord.ActivityType.listening
+    elif status["type"] == "streaming":
+        status_type = discord.ActivityType.streaming
+    elif status["type"] == "playing":
+        status_type = discord.ActivityType.playing
+    elif status["type"] == "listening":
+        status_type = discord.ActivityType.listening
+    elif status["type"] == "watching":
+        status_type = discord.ActivityType.watching
+    await client.change_presence(activity=discord.Activity(type=status_type, name=status["message"]))
+
 
 @tasks.loop(minutes=10)
-async def reload_config():
-    client.reload_config()
-#print(token)
+async def reload_conf():
+    client.reload_config()   
+
+client = Client()
+
+
+
 with open("token.txt", "r") as f:
     token = f.read()
 client.run(token)

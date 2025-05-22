@@ -1,28 +1,34 @@
 {
     "debug": true,
-    "roles":{
-        "owners":[1142511163821801493],
-        "admins":[],
-        "developers":[]
-    },
-    "startup_flags":[
-        
+    "owners": [
     ],
-    "status":{
-        "loop":[
+    "jsk": true,
+    "status": {
+        "loop": [
             {
-            "type":"online",
-            "message":"TuSK for life!"
+                "type": "online",
+                "message": "TuSK for life!"
             },
             {
-            "type":"online",
-            "message":"Hello, I'm a bot!"
+                "type": "online",
+                "message": "The best bots are made in TuSK!"
             },
             {
-            "type":"online",
-            "message":"The best bots are made in TuSK!"
+                "message": "I use tusk btw",
+                "type": "online"
+            },
+            {
+                "type": "listening",
+                "message": "commands"
             }
         ]
     },
-    "version":"0.0.1"
+    "preinstalled_commands": true,
+    "package_sources": {
+        "wimp-official": {
+            "url": "https://github.com/TutlaMC/wimp-packages",
+            "branch": "main"
+        }
+    },
+    "version": "1.0.0"
 }

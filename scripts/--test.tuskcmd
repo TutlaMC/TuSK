@@ -1,2 +1,2 @@
 /hello "Sends hello in channel"
-send "hello" to event_channel
+send "hello" to ctx

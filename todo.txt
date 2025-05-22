@@ -1,15 +1,2 @@
-Add:
-
-- Debug the panels
-- Filemanager for panel
-- Optional brackets
-- Hard Check the concatenation
-
-- JSON Loader
-- Regex
-- Better Concatenation
-- Better Objects
-- JSK Integration
-- Better function paraemeters
-- Better Globalization
-- Command System
+Future:
+- `every __ <time> do` (tasks.loop)

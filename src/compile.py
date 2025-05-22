@@ -17,7 +17,6 @@ class Client(discord.Client):
 
         with open("config.json", "r") as f:
             self.config = json.load(f)
-        self.startup_Flags = self.config["startup_flags"]
 bot=Client()
 interpreter.setup(file=file,bot=bot)
 if "--debug" in sys.argv:

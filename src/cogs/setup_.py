@@ -10,125 +10,11 @@ changelog = response.text
 # Script Panel
 #########################################################
 
-class ScriptAddForm(discord.ui.Modal):
-    def __init__(self):
-        super().__init__(title="Add a script")
-        self.add_item(discord.ui.TextInput(label="Script Title", style=discord.TextStyle.short, placeholder="example.tusk"))
-        self.add_item(discord.ui.TextInput(label="Script", style=discord.TextStyle.paragraph, placeholder="print('Hello world!')"))
-
-    async def on_submit(self, interaction: discord.Interaction):
-        title = self.children[0].value
-        script = self.children[1].value
-        with open(f"scripts/{title}.tusk", "w") as f:
-            f.write(script)
-        await interaction.response.send_message(f"Script added: {title}\nCompile it with `/compile`", ephemeral=True)
-        self.bot.load_scripts()
-    
-class ScriptRemoveView(discord.ui.View):
-    def __init__(self, bot):
-        self.bot = bot
-        
-        scripts = self.bot.load_scripts()
-        options = []
-        for script in scripts:
-            options.append(discord.SelectOption(label=script, value=script))
-        select = discord.ui.Select(
-            placeholder="Choose a script to remove",
-            options=options
-        )
-        select.callback = self.select_callback
-        self.add_item(select)
-        self.value = None
-
-    async def select_callback(self, interaction: discord.Interaction):
-        self.value = interaction.data["values"][0]
-        os.remove(self.value)
-        self.bot.remove_script_associations(self.value)
-        await interaction.response.send_message(f"Script removed: {self.value}", ephemeral=True)
-        self.bot.load_scripts()
-
-class EnableScriptView(discord.ui.View):
-    def __init__(self, bot):
-        self.bot = bot
-        scripts = self.bot.load_scripts(enabled=False)
-        options = []
-        for script in scripts:
-            options.append(discord.SelectOption(label=script, value=script))
-        select = discord.ui.Select(
-            placeholder="Choose a script to enable",
-            options=options
-        )
-        select.callback = self.select_callback
-        self.add_item(select)
-        self.value = None
-
-    async def select_callback(self, interaction: discord.Interaction):
-        self.value = interaction.data["values"][0]
-        os.rename(self.value, self.value.replace("--",""))
-        await interaction.response.send_message(f"Script enabled!\nCompile it with `/compile`", ephemeral=True)
-        self.bot.load_scripts()
-
-class DisableScriptView(discord.ui.View):
-    def __init__(self, bot):
-        self.bot = bot
-        scripts = self.bot.load_scripts(enabled=True)
-        options = []
-        for script in scripts:
-            options.append(discord.SelectOption(label=script, value=script))
-        select = discord.ui.Select(
-            placeholder="Choose a script to disable",
-            options=options
-        )
-        select.callback = self.select_callback
-        self.add_item(select)
-        self.value = None
-
-    async def select_callback(self, interaction: discord.Interaction):
-        self.value = interaction.data["values"][0]
-        os.rename(self.value, f"--{self.value}")
-        self.bot.remove_script_associations(self.value)
-        await interaction.response.send_message(f"Script disabled!", ephemeral=True)
-        self.bot.load_scripts()
 
 
 
-class ScriptView(discord.ui.View):
-    def __init__(self, bot):
-        self.bot = bot
-        super().__init__(timeout=None)
-
-    @discord.ui.button(label="Add Script", style=discord.ButtonStyle.primary)
-    async def add_script(self, ctx: discord.Interaction, button: discord.ui.Button):
-        await ctx.response.send_modal(ScriptAddForm())
-
-    @discord.ui.button(label="Remove Script", style=discord.ButtonStyle.red)
-    async def remove_script(self, ctx: discord.Interaction, button: discord.ui.Button):
-        await ctx.response.send_message("Remove Script", view=ScriptRemoveView(self.bot), ephemeral=True)
-
-    @discord.ui.button(label="Enable Script", style=discord.ButtonStyle.green)
-    async def enable_script(self, ctx: discord.Interaction, button: discord.ui.Button):
-        await ctx.response.send_message("Enable Script", view=EnableScriptView(self.bot), ephemeral=True)
-
-    @discord.ui.button(label="Disable Script", style=discord.ButtonStyle.red)
-    async def disable_script(self, ctx: discord.Interaction, button: discord.ui.Button):
-        await ctx.response.send_message("Disable Script", view=DisableScriptView(self.bot), ephemeral=True)
 
 
-
-class TestModal(discord.ui.Modal):
-    def __init__(self, bot):
-        self.bot = bot
-        super().__init__(title="Test Script")
-        self.add_item(discord.ui.TextInput(label="Script", style=discord.TextStyle.paragraph, placeholder="print('Hello world!')"))
-
-    async def on_submit(self, interaction: discord.Interaction):
-        script = self.children[0].value
-        await interaction.response.send_message(f"Compiling Script: {script}", ephemeral=True)
-        try:
-            await self.bot.compile_script(script, temporary=True)
-            await interaction.followup.send("Script compiled!", ephemeral=True)
-        except Exception as e:
-            await interaction.followup.send(f"Error compiling script: ```python\n{str(e)}```", ephemeral=True)
 
 
 
@@ -249,43 +135,62 @@ class TuSKSetup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    group = app_commands.Group(name="panel", description="Tusk Panel")
+
     @app_commands.command(name="setup", description="Setup the bot")
     @owner_only()
     async def setup_(self, ctx: discord.Interaction):
-        with open("docs/setup.md", "r") as f:
-            text = f.read()
-        await ctx.response.send_message(text)
+        await ctx.response.send_message("Read [the docs](https://tusk.tutla.net/docs/setup) on how to set this up")
 
-    @app_commands.command(name="panel", description="Your Bot Panel")
+    @group.command(name="tuskfetch", description="Main Panel, Neofetch but for Tusk")
     @owner_only()
     async def restricted_command(self, ctx: discord.Interaction):
         bot = self.bot
         bot.reload_config()
         config = bot.config
 
-        text = f"""```yml
-        ============== TUSK {config["version"]} ==============
-        Bot Version: {config["version"]}
-        Bot Status: {str(bot.status)}
-        Debug Mode: {str(config["debug"]).upper()}
+        text = f"""```ansi
+                                                                                
+                              ####                ##&                           
+                          #########%            &#######                        
+                        ###############&     #############%                     
+                          ##################################&                   
+                           &##################################                  
+                            ######**************###############                 
+                            ############**(#####################                
+                           #############**/#####################                
+                         ###############**/#####################                
+                  ######################**/#####################                
+                   #####################**/#####################                
+                   #####################((#####################                 
+                    %#########################################                  
+                      ######################################&                   
+                       %##################################%                     
+                          ##############################                        
+                             &######################%                           
+                                   &%#########&                                
+```
+```yml
+
+
+============== TUSK {config["version"]} ==============
+    Bot Version: {config["version"]}
+    Bot Status: {str(bot.status)}
+    Debug Mode: {str(config["debug"]).upper()}
 
         
-        Scripts:
-        {"\n - ".join([f"`{script}`" for script in bot.scripts])}
+    Scripts:
+    {"\n - ".join([f"`{script}`" for script in bot.scripts])}
        
-        ```
-        Owners:
-        {" ".join([f"<@{owner}>" for owner in config["roles"]["owners"]])}
-        Admins:
-        {" ".join([f"<@{admin}>" for admin in config["roles"]["admins"]])}
-        Developers:
-        {" ".join([f"<@{developer}>" for developer in config["roles"]["developers"]])}
+    ```
+Admins (Panel Access, owners basically):
+{" ".join([f"<@{owner}>" for owner in ["owners"]])}
         """
 
         await ctx.response.send_message(text)
 
-    @app_commands.command(name="rpc", description="Setup your Discord RPC")
-    @admin_only()
+    @group.command(name="rpc", description="Setup your Discord RPC")
+    @owner_only()
     async def rpc(self, ctx: discord.Interaction):
         rpc_list = self.bot.config["status"]["loop"]
         text = ""
@@ -293,36 +198,8 @@ class TuSKSetup(commands.Cog):
             text += f"{i+1}. {rpc['message']} ({rpc['type']})\n"
         await ctx.response.send_message(text,view=RPCView(self.bot))
 
-    @app_commands.command(name="scripts", description="Your scripts")
-    @admin_only()
-    async def skript(self, ctx: discord.Interaction):
-        await ctx.response.send_message("Your scripts", view=ScriptView(self.bot))
 
-    @app_commands.command(name="compile", description="Compile your scripts")
-    @owner_only()
-    async def compile(self, ctx: discord.Interaction, script: str):
-        await ctx.response.send_message(f"Compiling script: {script}...\n It's better to read output/debug in console.", ephemeral=True)
-        if not script.startswith("scripts/"):
-            script = f"scripts/{script}"
-        if not script.endswith(".tusk"):
-            script = f"{script}.tusk"
-        try:
-            await self.bot.compile_script(script)
-            await ctx.followup.send("Scripts compiled!", ephemeral=True)
-        except Exception as e:
-            await ctx.followup.send(f"Error compiling script: ```python\n{e}```", ephemeral=True)
     
-    @app_commands.command(name="test", description="Test your script")
-    @owner_only()
-    async def test(self, ctx: discord.Interaction):
-        await ctx.response.send_modal(TestModal(self.bot))
-    
-    @app_commands.command(name="remove_associated_data", description="Remove associated data")
-    @owner_only()
-    async def remove_associated_data(self, ctx: discord.Interaction, script:str):
-        await ctx.response.send_message("Removing associated data...", ephemeral=True)
-        self.bot.remove_script_associations(script)
-        await ctx.followup.send("Associated data removed!", ephemeral=True)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(TuSKSetup(bot))

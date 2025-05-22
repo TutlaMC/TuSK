@@ -60,4 +60,7 @@ def is_ordinal_number(token: Token):
                 return False
     return False 
 
-
+def is_valid_identifier(value,interpreter):
+    if value in interpreter.data["vars"] or value in interpreter.data["funcs"]:
+        return True
+    return False

@@ -17,7 +17,7 @@ class Reponse(Variable):
             "url": response.url,
         }
         try:
-            self.properties["json"] = response.json()
+            self.properties["tson"] = response.json()
         except Exception:
             pass
 
@@ -37,7 +37,7 @@ class RequestNode(Node):
         data = {
             "headers": {},
             "data": {},
-            "json": {},
+            "tson": {},
             "files": {},
             "params": {},
             "cookies": {},
@@ -64,7 +64,7 @@ class RequestNode(Node):
                 if "user-agent" in data["headers"]:
                     data["headers"]["user-agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36"
 
-            self.value = Reponse(requests.get(self.url, params=data["params"], files=data["files"], cookies=data["cookies"], headers=data["headers"], json=data["json"]))
+            self.value = Reponse(requests.get(self.url, params=data["params"], files=data["files"], cookies=data["cookies"], headers=data["headers"], json=data["tson"]))
 
             
         elif typ.type == "KEYWORD" and typ.value == "post": 
@@ -89,7 +89,7 @@ class RequestNode(Node):
                 if "user-agent" in data["headers"]:
                     data["headers"]["user-agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36"
 
-            self.value = Reponse(requests.post(self.url,headers=data["headers"], json=data["json"]))
+            self.value = Reponse(requests.post(self.url,headers=data["headers"], json=data["tson"]))
                     
         else: 
             raise Exception(f"Invalid request type: {typ.value}")

@@ -84,10 +84,10 @@ class FactorNode(Node):
             dct = {}
             while self.interpreter.get_next_token().type != "RIGHT_CURLY":
                 e = self.interpreter.next_token()
-                if e.type in ["STRING"]:
+                if e.type == "STRING":
                     key = e.value
                     self.interpreter.expect_token("COLON")
-                    value = (await ExpressionNode(self.interpreter.next_token(), rules=["noLists"]).create()).value
+                    value = (await ExpressionNode(self.interpreter.next_token()).create()).value
                     dct[key] = value
                 if self.interpreter.get_next_token().type == "COMMA":
                     self.interpreter.next_token()
@@ -96,18 +96,39 @@ class FactorNode(Node):
         elif self.value.type == "LEFT_PAR":
             self.value = (await ExpressionNode(self.interpreter.next_token()).create()).value
             self.interpreter.next_token()
+        elif self.value.type == "LEFT_SQUARE":
+            list_ = []
+            while self.interpreter.get_next_token().type != "RIGHT_SQUARE":
+                list_.append((await ExpressionNode(self.interpreter.next_token()).create()).value)
+                if self.interpreter.get_next_token().type != "COMMA" and self.interpreter.get_next_token().type != "RIGHT_SQUARE":
+                    self.interpreter.error("InvalidList", "Invalid list, seperate items using a comma and close it in a square bracket")
+                if self.interpreter.get_next_token().type == "COMMA":
+                    self.interpreter.next_token()
+            self.interpreter.expect_token("RIGHT_SQUARE")
+            self.value = list_
         else:
             raise Exception(f"Invalid factor node type {value}")
-
-        # Lists
-        if not "noLists" in self.rules:
-            list_ = [self.value]
-
-            while self.interpreter.get_next_token().type == "COMMA":
+        
+        if type(self.value) in [str, list, dict] and self.interpreter.get_next_token().type == "LEFT_SQUARE":
+            self.interpreter.next_token()
+            if not self.interpreter.get_next_token().type in ["COLON", "RIGHT_SQUARE"]:
+                e = (await ExpressionNode(self.interpreter.next_token()).create()).value
+            else: 
+                e = 0
+            if self.interpreter.get_next_token().type == "COLON":
                 self.interpreter.next_token()
-                list_.append((await ExpressionNode(self.interpreter.next_token(),rules=["noLists"]).create()).value)
-            if len(list_) > 1: self.value = list_
-        self.interpreter.debug_msg("factor", "<- factor (node) end")
+                if self.interpreter.get_next_token().type == "RIGHT_SQUARE":
+                    self.value = self.value[e:]
+                else:
+                    e2 = (await ExpressionNode(self.interpreter.next_token()).create()).value
+                    self.value = self.value[e:e2]
+            elif self.interpreter.get_next_token().type == "RIGHT_SQUARE":
+                if type(e) == int:
+                    self.value = self.value[e-1]
+                else:
+                    self.value = self.value[e]
+            self.interpreter.expect_token("RIGHT_SQUARE")
+
         return self
 class TermNode(Node):
     def __init__(self, factor:Token,rules=[]):

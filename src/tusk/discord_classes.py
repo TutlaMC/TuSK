@@ -51,6 +51,8 @@ async def to_discord_object(bot, obj, to_type, references=[]):
                 tobj = obj.properties["python"]
             elif type(obj) in [discord.TextChannel, discord.abc.GuildChannel, discord.abc.PrivateChannel, discord.VoiceChannel, discord.StageChannel, discord.CategoryChannel, discord.Thread]:
                 tobj = obj
+            elif type(obj) == ContextClass:
+                tobj = obj.properties["python"]
             else:
                 raise Exception(f"you fucked up lmao {obj}")
         elif to_type == "user":
@@ -95,6 +97,11 @@ async def to_discord_object(bot, obj, to_type, references=[]):
                 tobj = obj.properties["python"]
             elif type(obj) in [discord.Attachment]:
                 tobj = obj
+        elif to_type == "context":
+            if type(obj) == discord.Interaction:
+                pass
+            elif type(obj) == ContextClass:
+                tobj = obj["python"]
         else:
             raise Exception(f"you fucked up lmao {obj}")
         dobjl.append(tobj)
@@ -166,7 +173,11 @@ async def to_tusk_object(bot:discord.Client, obj, to_type, references=[]):
             elif type(obj) == int:
                 guild = await bot.fetch_guild(references[0])
                 dobj = CategoryClass(await guild.categories[obj])
-        
+        elif to_type == "attachment":
+            if type(obj) == discord.Attachment:
+                dobj = AttachmentClass(obj)
+            elif type(obj) == AttachmentClass:
+                dobj = obj
         else:
             raise Exception(f"you fucked up lmao {obj}")
         if dobj != None:
@@ -177,31 +188,37 @@ async def to_tusk_object(bot:discord.Client, obj, to_type, references=[]):
         return dobjl
 
 class MessageClass(Variable):
-    def __init__(self, message:discord.Message):
-
+    def __init__(self, message:discord.Message|discord.PartialMessage):
         self.name = message
         self.value = message.content
         self.properties = {}
         self.properties["content"] = message.content
         self.properties["author"] = UserClass(message.author)
-        self.properties["channel"] = ChannelClass(message.channel)
-        self.properties["channel_id"] = message.channel.id
-        self.properties["guild"] = GuildClass(message.guild)
-        self.properties["server"] = self.properties["guild"]
-        self.properties["guild_id"] = message.guild.id
-        self.properties["server_id"] = self.properties["guild_id"]
-        self.properties["created_at"] = str(message.created_at)
         self.properties["id"] = message.id
-        self.properties["embeds"] = message.embeds
-        self.properties["attachments"] = [AttachmentClass(attachment) for attachment in message.attachments]
-        self.properties["has_attachments"] = len(self.properties["attachments"]) > 0
-        self.properties["reactions"] = message.reactions
-        if message.reference != None:
-            self.properties["reference_id"] = MessageClass(message.reference.message_id)
-        else:
-            self.properties["reference_id"] = None
-        self.properties["mentions"] = message.mentions
-        self.properties["tts"] = message.tts
+        if type(message) == discord.Message:
+            self.properties["channel"] = ChannelClass(message.channel)
+            self.properties["guild"] = GuildClass(message.guild)
+            self.properties["server"] = self.properties["guild"]
+            self.properties["created_at"] = str(message.created_at)
+            self.properties["embeds"] = message.embeds
+            self.properties["attachments"] = [AttachmentClass(attachment) for attachment in message.attachments]
+            self.properties["has_attachments"] = len(self.properties["attachments"]) > 0
+            self.properties["reactions"] = message.reactions
+            if message.reference != None:
+                if hasattr(message.reference, "message_id"):
+                    self.properties["reference_id"] = message.reference.message_id
+                else:
+                    self.properties["reference_id"] = None
+            else:
+                self.properties["reference_id"] = None
+            self.properties["mentions"] = message.mentions
+            self.properties["tts"] = message.tts
+            if hasattr(message, "guild"):
+                self.properties["guild_id"] = message.guild.id
+                self.properties["server_id"] = self.properties["guild_id"]
+        self.properties["channel_id"] = message.channel.id
+        
+        
         self.properties["python"] = message
         
 class UserClass(Variable):
@@ -377,8 +394,30 @@ class AttachmentClass(Variable):
             self.properties["spoiler"] = False
         self.properties["python"] = attachment
 
-dsc_obj_types = [discord.Message,discord.TextChannel,discord.User,discord.Guild,discord.Role,discord.Emoji,discord.CategoryChannel,discord.Reaction,discord.Member, discord.PartialEmoji, discord.PartialMessage, discord.Attachment]
-tusk_obj_types = [MessageClass,ChannelClass,UserClass,GuildClass,RoleClass,EmojiClass,CategoryClass,ReactionClass,AttachmentClass]
+class ContextClass(Variable):
+    def __init__(self, context:discord.Interaction):
+        self.name = context
+        self.value = context
+        self.properties = {}
+        if hasattr(context, "message"):
+            if context.message != None:
+                self.properties["message"] = MessageClass(context.message)
+        if hasattr(context, "channel"):
+            if context.channel != None:
+                self.properties["channel"] = ChannelClass(context.channel)
+        if hasattr(context, "guild"):
+            if context.guild != None:
+                self.properties["guild"] = GuildClass(context.guild)
+        if hasattr(context, "user"):
+            if context.user != None:
+                self.properties["user"] = UserClass(context.user)
+        if hasattr(context, "guild_id"):
+            if context.guild_id != None:
+                self.properties["guild_id"] = context.guild_id
+        self.properties["python"] = context
+
+dsc_obj_types = [discord.Message,discord.TextChannel,discord.User,discord.Guild,discord.Role,discord.Emoji,discord.CategoryChannel,discord.Reaction,discord.Member, discord.PartialEmoji, discord.PartialMessage, discord.Attachment, discord.Interaction]
+tusk_obj_types = [MessageClass,ChannelClass,UserClass,GuildClass,RoleClass,EmojiClass,CategoryClass,ReactionClass,AttachmentClass, ContextClass]
 
 
 
@@ -388,7 +427,14 @@ def is_discord_object(obj):
     return False
 
 def is_tusk_object(obj):
-    print(type(obj),"is tusk object")
     if type(obj) in tusk_obj_types:
         return True
     return False    
+
+def quick_convert_dsc(obj):
+    if is_tusk_object(obj):
+        return obj.properties["python"]
+    elif is_discord_object(obj):
+        return obj
+    else:
+        return None

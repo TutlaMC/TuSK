@@ -79,12 +79,18 @@ class EffectNode(Node):
         elif self.token.value == "import":
             from tusk.nodes.base.import_ import ImportNode
             await ImportNode(self.token).create()
+        elif self.token.value == "json":
+            from tusk.nodes.effects.json_ import JsonNode
+            self.value = (await JsonNode(self.token).create()).value
+        elif self.token.value in ["getDBData","setDBData","deleteDBData","getDB","printDB","deleteDB","createDB"]:
+            from tusk.nodes.effects.db import DBNode
+            self.value = (await DBNode(self.token).create()).value
 
 
 
 
         ####################### DISCORD EFFECTS #######################
-        elif self.token.value in ["send","edit"]:
+        elif self.token.value in ["send","edit","reply"]:
             from tusk.nodes.discord.effects.messages_ import MessageNode
             self.value = (await MessageNode(self.token).create()).value
         elif self.token.value == "create":

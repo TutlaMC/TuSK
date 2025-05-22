@@ -52,10 +52,12 @@ class OnNode(Node):
 
                 self.interpreter.error("InvalidEvent", f"Invalid event type: {event_type_}")
             
-
-
-
-
+            data = {}
+            if self.interpreter.is_token("KEYWORD:toall"):
+                self.interpreter.next_token()
+                data["toall"] = True
+            else:
+                data["toall"] = False
 
             self.end_found = False
 
@@ -68,7 +70,7 @@ class OnNode(Node):
                     interal_stucture_count += 1
                     tkn_to_append = self.interpreter.next_token()
                     self.tokens.append(tkn_to_append)
-                elif nxt_tkn.type == "ENDSTRUCTURE":
+                elif nxt_tkn.type in "ENDSTRUCTURE":
                     if interal_stucture_count == 0:
                         self.interpreter.next_token()
                         self.end_found = True
@@ -80,8 +82,11 @@ class OnNode(Node):
                     tkn_to_append = self.interpreter.next_token()
                     self.tokens.append(tkn_to_append)
             self.tokens.append(Token("ENDSCRIPT", "", self.interpreter))
+            data["tokens"] = self.tokens
+            data["interpreter"] = self.interpreter
+            self.interpreter.data["events"][event_type_].append(data)
 
-            self.interpreter.data["events"][event_type_].append({"tokens":self.tokens,"interpreter":self.interpreter}) # itll look like "message": [[...],<Interpreter>]]
+            
 
         else:
             self.interpreter.error("InvalidEvent", f"Invalid event type: {event_type.type}")

@@ -1,14 +1,20 @@
-# V0.0.3-NT
+# V1
 
-ADD:
-- Grant/Revoke Roles
-- Change Channel/Role/Category/Server/User
-- Reading/Sending/Creating Attachments
+Tusk V1 Official release, expect patch-releases and installers soon!
+Documentation to be updated
 
-FIXED:
-- `length` giving an error when useed in if statements, fixed by connverting ExpressionNode to FactorNode
+ADD (compared to beta versions):
+- Commands!
+- `toall`
+- JSON
+- Function Paramater Extension
+- Easy/Quick-Use Database
+- JSK Integration
+- Changed method of lists to support nested lists
+- Slight Changes to concatenation & lists/dicts
 
-BACKEND:
-- Changed how IF statements work
-- Changed implementation of editing messages
-- Reopimized While loops and if statements
+FIX:
+- Discord RPC
+
+Backend:
+- Changed how lexer handles numbers (negative numbers werent a thing until now)

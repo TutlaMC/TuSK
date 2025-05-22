@@ -1,6 +1,3 @@
-on message
-    if event_message's content is "eee" then
-        set msg to send "gyatt" to event_channel
-        edit msg to "wigma wiggily lalbs" 
-    end
+on message 
+    reply to event_message with "hello"
 end

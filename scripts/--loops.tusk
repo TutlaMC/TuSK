@@ -10,7 +10,7 @@ loop 10 times
     print loop_item
 end
 
-set x to 1, 7, "Car"
+set x to [1, 7, "Car"]
 loop all items in x
     print what type is loop_item
 end

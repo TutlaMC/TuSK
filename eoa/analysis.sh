@@ -37,19 +37,16 @@ while IFS= read -r file; do
     
     # Only count Python-specific metrics for .py files
     if [ "$extension" = "py" ]; then
-        # Count classes
+
         classes=$(grep -c "^class " "$file")
         total_classes=$((total_classes + classes))
         
-        # Count functions
         functions=$(grep -c "^    def " "$file")
         total_functions=$((total_functions + functions))
         
-        # Count imports
         imports=$(grep -c "^import\|^from " "$file")
         total_imports=$((total_imports + imports))
         
-        # Count comments
         comments=$(grep -c "^#" "$file")
         total_comments=$((total_comments + comments))
         

@@ -16,7 +16,7 @@ sayHello
 
 
 function sayHelloTo name that
-    print "Hello, " + name
+    print "Hello," + name
 end
 
 sayHelloTo "TutlaMC"

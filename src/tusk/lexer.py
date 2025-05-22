@@ -69,11 +69,11 @@ KEYWORDS = [
       "characters","items","all",
       "from","of","by","till",
       "capture",
-      "get","post","headers","json",
+      "get","post","headers","tson",
       "character","item","number",
       "file", "variable", 
-      "channel", "server","member","user","message", "category", "emoji", "reaction", "role", "attachment",
-      "channels", "servers", "members", "users", "messages", "categories", "emojis", "reactions", "roles", "attachments",
+      "channel", "server","member","user","message", "category", "emoji", "reaction", "role", "attachment", "context",
+      "channels", "servers", "members", "users", "messages", "categories", "emojis", "reactions", "roles", "attachments", "contexts",
       "with","between",
       "named","color",
       "for", "can",
@@ -81,10 +81,11 @@ KEYWORDS = [
       "toall",
       "can","cannot",
       "because",
-      "delete_after"
-      
-
+      "delete_after",
+      "jsloads", "jsave", "jsdumps", "jsload"
 ]
+
+TYPES_ = ["NUMBER","STRING","BOOL","BOOLEAN","LIST","NOTHING","TSON"]
 
 EFFECTS = [
     "set",
@@ -100,14 +101,23 @@ EFFECTS = [
     "delete",
     "random",
     "import",
+    "json",
     
     # Discord
-    "send","edit",
+    "send","edit","reply",
     "create",
     "allow","disallow",
     "change",
     "grant","revoke",
-    "kick","ban","unban","timeout"
+    "kick","ban","unban","timeout",
+
+    "setDBData",
+    "getDBData",
+    "deleteDBData",
+    "getDB",
+    "printDB",
+    "deleteDB",
+    "createDB",
 ]
 
 STRUCTURES = [
@@ -129,6 +139,8 @@ COLORS = {
     "orange":"#ffa500",
     "brown":"#a52a2a"
 }
+
+# May not be the best lexer, but hey- if it works it works and don't touch it, you'll prob mess it up
 
 class Lexer:
     def __init__(self,text, interpreter):
@@ -155,14 +167,16 @@ class Lexer:
         in_string = False
         in_comment = False
         hex_count = 0
+        in_number = False
         start_quote_type = None     
 
-        for i in "(){}[],;:+-/%*^,":
+        for i in "(){}[],;:,":
             text = text.replace(i,f" {i} ")
         text = text.replace("'s "," 's ")
         
-
-        for j in text: 
+        text+="\n"
+        while reader_pos < len(text): 
+            j = text[reader_pos]
             if in_string:
                 if j == start_quote_type:
                     in_string = False
@@ -179,6 +193,17 @@ class Lexer:
                     in_comment = False
                     self.ctoken = ""
                 else: pass
+            elif in_number:
+                if j in "0123456789.":
+                    self.ctoken += j
+                elif j in ["+", "-", "*", "/","*", "%"]:
+                    in_number = False
+                    self.tokens.append(Token("NUMBER", self.ctoken, self.interpreter))
+                    reader_pos -= 1
+                elif j in " \t\n":
+                    in_number = False
+                    self.tokens.append(Token("NUMBER", self.ctoken, self.interpreter))
+                    self.ctoken = ""
             elif hex_count > 0:
                 if j in "0123456789abcdef":
                     hex_count += 1
@@ -207,6 +232,12 @@ class Lexer:
                     }[j]
                     self.tokens.append(Token(token_type, j, self.interpreter))
                     self.ctoken = ""
+                elif j in ["+", "-", "*", "/","**", "%"]:
+                    if text[reader_pos+1].isdigit() and (not text[reader_pos-1].isdigit()): # to allow negative numbers
+                        self.ctoken = j
+                        in_number = True
+                    else:
+                        self.tokens.append(Token("OPERATOR", j, self.interpreter))
                 elif j == "#":
                     if not (len(text) > reader_pos+6 and all(c.lower() in "0123456789abcdef" for c in text[reader_pos+1:reader_pos+7])):
                         in_comment = True
@@ -219,13 +250,16 @@ class Lexer:
                     in_string = True
                     start_quote_type = j
                     self.ctoken = ""
+                elif j.isdigit():
+                    in_number = True
+                    self.ctoken=j
                 elif j in " \t\n" or reader_pos == len(text)-1:
                     if reader_pos == len(text)-1 and j not in " \t\n": 
                         self.ctoken += j
                     
                     self.ctoken = self.ctoken.replace(" ","").replace("\n","").replace("\t","")
                     if self.ctoken != "":
-                        if self.ctoken.isnumeric():
+                        if self.is_number(self.ctoken):
                             self.tokens.append(Token("NUMBER", self.ctoken, self.interpreter))
                             self.ctoken = ""
                         elif self.ctoken in ["true","false"]:
@@ -246,7 +280,7 @@ class Lexer:
                         elif self.ctoken in EFFECTS:
                             self.tokens.append(Token("EFFECT",self.ctoken,self.interpreter))
                             self.ctoken=""
-                        elif self.ctoken in ["NUMBER","STRING","BOOL","BOOLEAN","LIST","NOTHING"]:
+                        elif self.ctoken in TYPES_:
                             self.tokens.append(Token("TYPE",self.ctoken, self.interpreter))
                             self.ctoken=""
                         elif self.ctoken in STRUCTURES:
@@ -257,9 +291,7 @@ class Lexer:
                             self.ctoken = ""
                         elif self.ctoken in PermissionNames:
                             self.reg("PERMISSION", self.ctoken)
-                        elif self.ctoken in ["+", "-", "*", "/","**", "%"]:
-                            self.tokens.append(Token("OPERATOR", self.ctoken, self.interpreter))
-                            self.ctoken = ""
+                        
                         elif self.ctoken in COLORS or self.ctoken.startswith("#"):
                             if self.ctoken.startswith("#"):
                                 if len(self.ctoken) != 7: self.interpreter.error("InvalidColor",f"{self.ctoken} is not a color (or valid hexcode)")
@@ -291,3 +323,10 @@ class Lexer:
 
         self.tokens.append(Token("ENDSCRIPT", "", self.interpreter))
         return self.tokens
+    
+    def is_number(self,string):
+        try:
+            float(string)
+            return True
+        except:
+            return False

@@ -1,2 +1,4 @@
 requests
 discord
+jishaku
+git+https://github.com/Horse1jj/AioSQlite3

@@ -43,8 +43,8 @@ class Interpreter:
         if tokens==None:
             self.tokens = Lexer(self.text, self).classify_tokens()
         else:
-            self.tokens = tokens
-            self.tokens = self.change_token_parent(self)
+            self.tokens = tokens 
+            self.tokens = self.change_token_parent(self) 
         if bot == None:
             self.error("BotNotFound", "The bot specified does not exist", notes=["This error is caused by setup, it is not script-side error"])
         self.bot:discord.Client|discord.Bot = bot
@@ -75,6 +75,7 @@ class Interpreter:
 
     async def compile(self):
         self.end_found = False
+        self.caught_error = False
         while self.pos <= len(self.tokens)-1:
             #self.debug_msg(self.current_token, "<- stmt start")
             if self.end_found:
@@ -208,16 +209,19 @@ class Interpreter:
         return tokens
     
     def error(self, error_name:str, error_desc:str, notes:list[str]=[]):
-        print("\n================ ERROR ================")
-        print(f"{error_name}: {error_desc}")
-        print("============== POSITION ===============")
-        print(self.arrows_at_pos())
-        print("================ NOTES ================")
-        for i in notes:
-            print(i)
-        print("=======================================\n")
-        self.end_found = True
-        #exit()
+        if not self.caught_error: # to prevent error spam
+            self.caught_error = True
+            print("\n================ ERROR ================")
+            print(f"{error_name}: {error_desc}")
+            print("============== POSITION ===============")
+            print(self.arrows_at_pos())
+            print("================ NOTES ================")
+            for i in notes:
+                print(i)
+            print("=======================================\n")
+            self.end_found = True
+            #exit()
+        self.caught_error = True
 
     def debug_msg(self, *args,color="blue"):
         if self.debug: cprint(*args,color=color,engine="debug")

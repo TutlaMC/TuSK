@@ -8,17 +8,25 @@ import asyncio
 import discord
 
 class MessageNode(Node):
-    def __init__(self, token: Token):
+    def __init__(self, token: Token,reply=False):
         self.interpreter = token.interpreter
         self.token = token
         
     async def create(self):
         from tusk.nodes.expressions import ExpressionNode
-        message = (await ExpressionNode(self.interpreter.next_token()).create()).value
-        if self.token.value == "edit":
-            message = await to_discord_object(self.interpreter.bot, message, "message")
+        if not self.token.value == "reply":
+            message = (await ExpressionNode(self.interpreter.next_token()).create()).value
+            if self.token.value == "edit":
+                message = await to_discord_object(self.interpreter.bot, message, "message")
+                self.interpreter.expect_token("KEYWORD:to")
+                
+        else:
             self.interpreter.expect_token("KEYWORD:to")
-            content = (await ExpressionNode(self.interpreter.next_token()).create()).value
+            message = (await ExpressionNode(self.interpreter.next_token()).create()).value
+            message:discord.Message = await to_discord_object(self.interpreter.bot, message, "message")
+            self.interpreter.expect_token("KEYWORD:with")
+        content = (await ExpressionNode(self.interpreter.next_token()).create()).value 
+
             
         nfiles = []
         nembeds = []
@@ -70,7 +78,12 @@ class MessageNode(Node):
                 except UnboundLocalError:
                     self.interpreter.error("NoChannelOrUserProvided",f"You havent provided a channel or user to send the message to!",notes=["Possible Fix: add `to your_channel_here` to the send the message. your_channel_here should be a channel not a channel name (tusk will atempt to find it but in most cases it will fail)"])
             
-            self.value = MessageClass(await channel.send(message,files=nfiles,delete_after=delete_after))
+            if type(channel) == discord.Interaction:
+                self.value = MessageClass(await channel.followup.send(message,files=nfiles))
+            else:
+                self.value = MessageClass(await channel.send(message,files=nfiles,delete_after=delete_after))
+        elif self.token.value == "reply":
+            self.value = MessageClass(await message.reply(content=content,files=nfiles,delete_after=delete_after))
         else:
             self.value = MessageClass(await message.edit(content=content,attachments=nfiles))
         return self
