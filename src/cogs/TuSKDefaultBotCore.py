@@ -12,7 +12,7 @@ class TuSKDefaultBotCore(commands.Cog):
 
     @app_commands.command(name="changelog",description="What's new?")
     async def changelog(self,interaction: discord.Interaction):
-        await interaction.response.send_message(changelog)
+        await interaction.response.send_message(changelog,ephemeral=True)
 
     @app_commands.command(name="ping",description="Check the bot's latency")
     async def ping_callback(self,interaction: discord.Interaction):

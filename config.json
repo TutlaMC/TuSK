@@ -1,5 +1,5 @@
 {
-    "debug": true,
+    "debug": false,
     "owners": [
     ],
     "jsk": true,
@@ -30,5 +30,9 @@
             "branch": "main"
         }
     },
-    "version": "1.0.0"
+    "packages": {
+
+    },
+    "command_prefix": "tusk.",
+    "version": "1.0.1"
 }

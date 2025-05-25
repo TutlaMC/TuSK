@@ -133,7 +133,27 @@ class DisableScriptView(discord.ui.View):
         await interaction.response.send_message(f"Script disabled!", ephemeral=True)
         self.bot.load_scripts()
 
+class OpenScriptView(discord.ui.View):
+    def __init__(self, bot):
+        super().__init__()
+        self.bot = bot
+        scripts = self.bot.load_scripts(enabled=True)
+        options = []
+        for script in scripts:
+            options.append(discord.SelectOption(label=script, value=script))
+        select = discord.ui.Select(
+            placeholder="Choose a script to open",
+            options=options
+        )
+        select.callback = self.select_callback
+        self.add_item(select)
+        self.value = None
 
+    async def select_callback(self, interaction: discord.Interaction):
+        self.value = interaction.data["values"][0]
+        with open(self.value, "r") as f:
+            script = f.read()
+        await interaction.response.send_message(f"```js\n{script}\n```", ephemeral=True)
 
 class ScriptView(discord.ui.View):
     def __init__(self, bot):
@@ -156,6 +176,10 @@ class ScriptView(discord.ui.View):
     async def disable_script(self, ctx: discord.Interaction, button: discord.ui.Button):
         await ctx.response.send_message("Disable Script", view=DisableScriptView(self.bot), ephemeral=True)
 
+    @discord.ui.button(label="Open Script", style=discord.ButtonStyle.primary)
+    async def open_script(self, ctx: discord.Interaction, button: discord.ui.Button):
+        await ctx.response.send_message("Open Script", view=OpenScriptView(self.bot), ephemeral=True)
+
 class FileManagerGroup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -171,7 +195,7 @@ class FileManagerGroup(commands.Cog):
     @owner_only()
     async def open_callback(self, ctx: discord.Interaction):
         # File manager capable of creating, deleting, and editing and compiling tusk files.
-        await ctx.response.send_message(fm_ui(),view=ScriptView(self.bot))
+        await ctx.response.send_message(fm_ui(),view=ScriptView(self.bot),ephemeral=True)
 
     @group.command(name="compile", description="Compile your scripts")
     @owner_only()

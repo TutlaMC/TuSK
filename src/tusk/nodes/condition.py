@@ -21,7 +21,7 @@ class ConditionNode(Node):
         tkn1 = await ExpressionNode(self.token).create()
         if self.interpreter.get_next_token().type == "LOGIC":
             operator = self.interpreter.next_token()
-            tkn2 = await ConditionNode(self.interpreter.next_token()).create()
+            tkn2 = await ExpressionNode(self.interpreter.next_token()).create()
             if operator.value == "and" or operator.value == "&":
                 if tkn1.value == True and tkn2.value == True: self.value = True
                 else: self.value = False  

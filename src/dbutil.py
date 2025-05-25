@@ -14,7 +14,7 @@ def get_db(id: int,failsafe=False) -> dict|None:
         return json.load(f)
 
 def get_data(id: int,name) -> str|None:
-    return get_db(id, failsafe=True)[name]
+    return get_db(id, failsafe=True).get(name, None)
     
 def set_data(id: int, name, val) -> dict:
     db = get_db(id,failsafe=True)

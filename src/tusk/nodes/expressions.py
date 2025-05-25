@@ -205,5 +205,5 @@ class ExpressionNode(Node):
         else:
             self.value = tkn1.value
             self.type="1en"
-        self.interpreter.debug_msg(self.interpreter.current_token, "<- expr (node) end")
+        self.interpreter.debug_msg(self.interpreter.current_token,self.value, "<- expr (node) end")
         return self

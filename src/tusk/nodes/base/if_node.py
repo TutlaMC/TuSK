@@ -35,7 +35,7 @@ class IfNode(Node):
                 else:
                     internal_structure_count -= 1
                     self.interpreter.next_token()
-            elif nxt_tkn.type=="KEYWORD" and nxt_tkn.value == "elseif":
+            elif self.interpreter.is_token("KEYWORD:elseif") and internal_structure_count == 0:
                 self.interpreter.next_token()
                 if self.run_if == False:
                     self.condition = await ConditionNode(self.interpreter.next_token()).create()
@@ -54,7 +54,7 @@ class IfNode(Node):
                     self.success = True
                     self.run_if = False
                     self.run_else = False
-            elif nxt_tkn.type=="KEYWORD" and nxt_tkn.value == "else":
+            elif self.interpreter.is_token("KEYWORD:else") and internal_structure_count == 0:
                 self.interpreter.next_token()
                 if self.run_if == False and self.success == False:
                     self.run_else = True

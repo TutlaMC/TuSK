@@ -89,6 +89,7 @@ class GetNode(Node):
             elif e.value == "message":
                     if type(name) == int:
                         if self.interpreter.get_next_token().type == "LOGIC" and self.interpreter.get_next_token().value == "in":
+                            self.interpreter.expect_token("LOGIC:in")
                             self.interpreter.expect_token("KEYWORD:channel")
                             channel = (await to_discord_object(self.interpreter.bot, (await ExpressionNode(self.interpreter.next_token()).create()).value, "channel"))
                             self.value = MessageClass(await channel.fetch_message(int(name)))

@@ -196,7 +196,7 @@ Admins (Panel Access, owners basically):
         text = ""
         for i, rpc in enumerate(rpc_list):
             text += f"{i+1}. {rpc['message']} ({rpc['type']})\n"
-        await ctx.response.send_message(text,view=RPCView(self.bot))
+        await ctx.response.send_message(text,view=RPCView(self.bot),ephemeral=True)
 
 
     

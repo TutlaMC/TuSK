@@ -17,7 +17,7 @@ declare -A file_type_lines
 echo "File Analysis:"
 echo "----------------------------------------"
 
-# Process each file in the current directory, excluding .git and hidden folders
+# Process each file in the current directory, excluding .git, .venv and hidden folders
 while IFS= read -r file; do
     # Get file extension
     extension="${file##*.}"
@@ -54,7 +54,7 @@ while IFS= read -r file; do
     else
         echo "$lines lines"
     fi
-done < <(find . -type d -name .git -prune -o -type f -print)
+done < <(find . -type d \( -name .git -o -name .venv \) -prune -o -type f -print)
 
 echo "----------------------------------------"
 echo "Summary by File Type:"
@@ -74,7 +74,7 @@ echo
 echo "Code Structure:"
 
 # Calculate averages only if there are Python files
-python_files=$(find . -type d -name .git -prune -o -type f -name "*.py" -print | wc -l)
+python_files=$(find . -type d \( -name .git -o -name .venv \) -prune -o -type f -name "*.py" -print | wc -l)
 if [ "$python_files" -gt 0 ]; then
     if [ "$total_classes" -gt 0 ]; then
         avg_functions=$(echo "scale=2; $total_functions/$total_classes" | bc 2>/dev/null || echo "N/A")

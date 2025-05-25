@@ -1,0 +1,7 @@
+on message 
+    print event_message's content
+    if "🚡" in event_message's content then
+        reply to event_message with "trynna make it popular, unfunny cuh"
+    end
+end
+

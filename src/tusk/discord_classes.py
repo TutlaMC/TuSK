@@ -260,7 +260,10 @@ class GuildClass(Variable):
         self.properties["icon"] = guild.icon
         self.properties["created_at"] = str(guild.created_at)
         self.properties["member_count"] = guild.member_count
-        self.properties["owner"] = UserClass(guild.owner)
+        if guild.owner != None:
+            self.properties["owner"] = UserClass(guild.owner)
+        else:
+            self.properties["owner"] = None
         self.properties["afk_channel"] = guild.afk_channel
         if fast == False:
             self.properties["roles"] = [RoleClass(role) for role in guild.roles]
@@ -268,20 +271,20 @@ class GuildClass(Variable):
         else:
             self.properties["roles"] = guild.roles
             self.properties["emojis"] = guild.emojis
-        self.properties["afk_timeout"] = guild.afk_timeout
-        self.properties["features"] = guild.features
-        self.properties["premium_tier"] = guild.premium_tier
-        self.properties["premium_subscription_count"] = guild.premium_subscription_count
-        self.properties["system_channel"] = guild.system_channel
-        self.properties["system_channel_flags"] = guild.system_channel_flags
-        self.properties["widget_enabled"] = guild.widget_enabled
-        self.properties["widget_channel"] = guild.widget_channel
-        self.properties["widget_enabled"] = guild.widget_enabled
-        self.properties["widget_channel"] = guild.widget_channel
-        self.properties["voice_channels"] = guild.voice_channels
-        self.properties["text_channels"] = guild.text_channels
-        self.properties["categories"] = guild.categories
-        self.properties["threads"] = guild.threads
+            self.properties["afk_timeout"] = guild.afk_timeout
+            self.properties["features"] = guild.features
+            self.properties["premium_tier"] = guild.premium_tier
+            self.properties["premium_subscription_count"] = guild.premium_subscription_count
+            self.properties["system_channel"] = guild.system_channel
+            self.properties["system_channel_flags"] = guild.system_channel_flags
+            self.properties["widget_enabled"] = guild.widget_enabled
+            self.properties["widget_channel"] = guild.widget_channel
+            self.properties["widget_enabled"] = guild.widget_enabled
+            self.properties["widget_channel"] = guild.widget_channel
+            self.properties["voice_channels"] = guild.voice_channels
+            self.properties["text_channels"] = guild.text_channels
+            self.properties["categories"] = guild.categories
+            self.properties["threads"] = guild.threads
         self.properties["python"] = guild
 class ChannelClass(Variable):
     def __init__(self, channel,list_parent=True):
@@ -291,7 +294,10 @@ class ChannelClass(Variable):
         self.properties["name"] = channel.name
         self.properties["id"] = channel.id
         self.properties["type"] = channel.type
-        self.properties["position"] = channel.position
+        if hasattr(channel, "position"):
+            self.properties["position"] = channel.position
+        else:
+            self.properties["position"] = None
         self.properties["usage"] = f"<#{self.properties['id']}>"
         if type(channel) == discord.TextChannel:
             self.properties["topic"] = channel.topic
@@ -313,7 +319,7 @@ class RoleClass(Variable):
         self.properties["position"] = role.position
         self.properties["permissions"] = role.permissions
         self.properties["mention"] = role.mention
-        self.properties["members"] = role.members
+        self.properties["members"] = None
         self.properties["usage"] = f"<@&{self.properties['id']}>"
         self.properties["python"] = role
 

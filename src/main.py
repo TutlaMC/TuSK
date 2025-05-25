@@ -21,12 +21,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 class Client(commands.Bot):
     def __init__(self) -> None:
         intents = discord.Intents.all()
-        super().__init__(intents=intents,command_prefix='.')
-
-        self.event_executors = get_exec_names()
-
         with open("config.json", "r") as f:
             self.config = json.load(f)
+        super().__init__(intents=intents,command_prefix=self.config["command_prefix"])
+        self.event_executors = get_exec_names()
+
+        
+            
         
         # Start the tasks
         
@@ -36,23 +37,57 @@ class Client(commands.Bot):
         if self.config["preinstalled_commands"]:
             for filename in os.listdir('src/cogs'):
                 if filename.endswith('.py'):
-                    await client.load_extension(f'cogs.{filename[:-3]}')
+                    await self.load_extension(f'cogs.{filename[:-3]}')
             
             # Load packages
             if os.path.exists('packages'):
                 for filename in os.listdir('packages'):
                     if filename.endswith('.py') and not filename.startswith('__'):
                         try:
-                            await client.load_extension(f'packages.{filename[:-3]}')
+                            await self.load_extension(f'packages.{filename[:-3]}')
                         except Exception as e:
                             print(f"Failed to load package {filename}: {e}")
             
             if self.config["jsk"]:
-                await client.load_extension("jishaku")
+                cprint("Loading jishaku",color="green")
+                try:
+                    await self.load_extension("jishaku")
+                    print("Successfully loaded Jishaku!")
+                except Exception as e:
+                    print(f"Failed to load Jishaku: {str(e)}")
+                    print(f"Error type: {type(e)}")
+                    import traceback
+                    traceback.print_exc()
 
         await self.tree.sync()
 
+
+    async def is_owner(self, user: discord.User):
+        if user.id in self.config["owners"]:
+            return True
+        return await super().is_owner(user)
+    
     async def on_ready(self):
+        # Debug: Print loaded extensions
+        print("\n=== Loaded Extensions ===")
+        for ext in self.extensions:
+            print(f"- {ext}")
+        print("=======================\n")
+
+        # Debug: Test Jishaku specifically
+        if "jishaku" in self.extensions:
+            print("Jishaku is loaded!")
+            # Try to get Jishaku cog
+            jsk = self.get_cog("Jishaku")
+            if jsk:
+                print("Jishaku cog found!")
+                print(f"Available commands: {[c.name for c in jsk.get_commands()]}")
+            else:
+                print("Jishaku cog not found!")
+        else:
+            print("Jishaku is NOT loaded!")
+
+
         self.load_scripts()
         await self.compile_all_scripts()
         #status = random.choice(self.config["status"]["loop"])
@@ -101,9 +136,11 @@ class Client(commands.Bot):
         else:
             TuskInterpreter.setup(bot=self, text=script)
             if "fake_channel" in data:
-                TuskInterpreter.data["vars"]["event_channel"] = ChannelClass(data["fake_channel"])
+                if data["fake_channel"] != None:
+                    TuskInterpreter.data["vars"]["event_channel"] = ChannelClass(data["fake_channel"])
             if "fake_user" in data:
-                TuskInterpreter.data["vars"]["event_user"] = UserClass(data["fake_user"])
+                if data["fake_user"] != None:
+                    TuskInterpreter.data["vars"]["event_user"] = UserClass(data["fake_user"],fast=True)
             await TuskInterpreter.compile()
 
             
@@ -133,6 +170,8 @@ class Client(commands.Bot):
     
     ########### EVENTS ###########
     async def on_message(self,message): 
+        
+        
         debug_print("Executing message event",config=self.config)
         if message.author.bot: return
         async def srd(data):
@@ -145,6 +184,7 @@ class Client(commands.Bot):
             return data
         await self.event_executor("message",srd,other=message)
 
+        await self.process_commands(message)
         debug_print("Message event executed",config=self.config)
     async def on_message_delete(self,message):
         async def srd(data):
@@ -171,7 +211,6 @@ class Client(commands.Bot):
 
 
     async def on_reaction_add(self,reaction,user):
-        print("Reaction added")
         async def srd(data):
             data["vars"]["event_reaction"] = ReactionClass(reaction)
             data["vars"]["event_user"] = UserClass(user)
@@ -263,6 +302,8 @@ class Client(commands.Bot):
         await self.event_executor("member_update",srd)
 
     """
+
+    
     
 @tasks.loop(minutes=1)
 async def change_status():

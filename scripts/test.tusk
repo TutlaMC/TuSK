@@ -1,3 +1,0 @@
-on message 
-    reply to event_message with "hello"
-end

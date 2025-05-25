@@ -124,7 +124,76 @@ class WimpGroup(commands.Cog):
         with open(f"{package_dir}/{package.split('.')[len(package.split('.'))-1]}.py","w") as f:
             f.write(file.text)
         await ctx.response.send_message(f"Installed {package}!")
+
+    @group.command(name="search",description="Search for a package")
+    @owner_only()
+    async def search_callback(self, ctx: discord.Interaction, package:str, source:str="wimp-official"):
+        ctx.client.reload_config()
+        if source not in get_package_sources(self.bot):
+            await ctx.response.send_message(f"Source {source} not found")
+            return
             
+        url = get_package_sources(self.bot)[source]["url"]
+        branch = get_package_sources(self.bot)[source]["branch"]
+        
+        # Convert github.com URL to api.github.com URL
+        if "github.com" in url:
+            # Extract owner and repo from github URL
+            parts = url.replace("https://github.com/", "").split("/")
+            owner = parts[0]
+            repo = parts[1]
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/contents/?ref={branch}"
+        else:
+            await ctx.response.send_message("Only GitHub repositories are supported")
+            return
+
+        try:
+            response = requests.get(api_url)
+            if response.status_code != 200:
+                await ctx.response.send_message(f"Failed to fetch package list from GitHub")
+                return
+                
+            found_packages = []
+            for item in response.json():
+                if item["type"] == "file" and item["name"].endswith(".py"):
+                    if package.lower() in item["name"].lower():
+                        # Get file content to check for description
+                        content_url = item["download_url"]
+                        content_response = requests.get(content_url)
+                        description = "No description available"
+                        
+                        if content_response.status_code == 200:
+                            first_line = content_response.text.split('\n')[0]
+                            if first_line.startswith('#'):
+                                description = first_line.lstrip('#').strip()
+                        
+                        found_packages.append({
+                            "name": item["name"][:-3],  # Remove .py extension
+                            "description": description
+                        })
+            
+            if not found_packages:
+                await ctx.response.send_message(f"No packages found containing '{package}'")
+                return
+                
+            embed = discord.Embed(
+                title=f"Search Results for '{package}'",
+                description="Found the following packages:",
+                color=discord.Color.blue()
+            )
+            
+            for pkg in found_packages:
+                embed.add_field(
+                    name=pkg["name"],
+                    value=f"{pkg['description']}\nUse `/wimp install {pkg['name']}` to install this package",
+                    inline=False
+                )
+            
+            await ctx.response.send_message(embed=embed)
+            
+        except Exception as e:
+            await ctx.response.send_message(f"Error searching for packages: {str(e)}")
+
     @install_callback.autocomplete('source')
     async def source_autocomplete(self, interaction: discord.Interaction, current: str):
         sources = get_package_sources(self.bot)
