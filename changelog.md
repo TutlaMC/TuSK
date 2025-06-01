@@ -18,3 +18,11 @@ FIX:
 
 Backend:
 - Changed how lexer handles numbers (negative numbers werent a thing until now)
+
+# v1.0.1
+
+basic enhancement, added:
+
+- dockerfile
+- .dockerignore
+
